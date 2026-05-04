@@ -2,9 +2,28 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ImageStudio, VideoStudio, LipSyncStudio, CinemaStudio, MarketingStudio, WorkflowStudio, AgentStudio, AppsStudio, getUserBalance } from 'studio';
 import axios from 'axios';
 import ApiKeyModal from './ApiKeyModal';
+
+let ImageStudio, VideoStudio, LipSyncStudio, CinemaStudio, MarketingStudio, WorkflowStudio, AgentStudio, AppsStudio, getUserBalance;
+let studioLoaded = false;
+let studioError = null;
+
+try {
+  const studioModule = require('studio');
+  ImageStudio = studioModule.ImageStudio;
+  VideoStudio = studioModule.VideoStudio;
+  LipSyncStudio = studioModule.LipSyncStudio;
+  CinemaStudio = studioModule.CinemaStudio;
+  MarketingStudio = studioModule.MarketingStudio;
+  WorkflowStudio = studioModule.WorkflowStudio;
+  AgentStudio = studioModule.AgentStudio;
+  AppsStudio = studioModule.AppsStudio;
+  getUserBalance = studioModule.getUserBalance;
+  studioLoaded = true;
+} catch (err) {
+  studioError = err.message;
+}
 
 const TABS = [
   { id: 'image',   label: 'Image Studio' },
@@ -213,6 +232,39 @@ export default function StandaloneShell() {
     </div>
   );
 
+  if (!studioLoaded) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center px-4">
+        <div className="max-w-md text-center">
+          <div className="mb-6">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#d9ff00]/10 border border-[#d9ff00]/20 mb-4">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#d9ff00" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">Setup Required</h1>
+            <p className="text-white/60 text-sm mb-4">
+              This project requires Git submodules to be initialized. Run the setup script to get started:
+            </p>
+            <div className="bg-black/50 border border-white/10 rounded-lg p-4 mb-4 text-left">
+              <code className="text-[#d9ff00] text-xs font-mono">npm run setup</code>
+            </div>
+            <p className="text-xs text-white/40">
+              This will initialize Git submodules, install dependencies, and build all workspace packages.
+            </p>
+            {studioError && (
+              <div className="mt-4 p-3 rounded bg-red-500/10 border border-red-500/20">
+                <p className="text-xs text-red-400 font-mono">{studioError}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!apiKey) {
     return <ApiKeyModal onSave={handleKeySave} />;
   }
@@ -303,14 +355,24 @@ export default function StandaloneShell() {
 
       {/* Studio Content */}
       <div className="flex-1 min-h-0 relative overflow-hidden">
-        {activeTab === 'image'   && <ImageStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
-        {activeTab === 'video'   && <VideoStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
-        {activeTab === 'lipsync' && <LipSyncStudio apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
-        {activeTab === 'cinema'  && <CinemaStudio  apiKey={apiKey} />}
-        {activeTab === 'marketing' && <MarketingStudio apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
-        {activeTab === 'workflows' && <WorkflowStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
-        {activeTab === 'agents' && <AgentStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
-        {activeTab === 'apps' && <AppsStudio apiKey={apiKey} />}
+        {studioLoaded ? (
+          <>
+            {activeTab === 'image'   && <ImageStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
+            {activeTab === 'video'   && <VideoStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
+            {activeTab === 'lipsync' && <LipSyncStudio apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
+            {activeTab === 'cinema'  && <CinemaStudio  apiKey={apiKey} />}
+            {activeTab === 'marketing' && <MarketingStudio apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
+            {activeTab === 'workflows' && <WorkflowStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
+            {activeTab === 'agents' && <AgentStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
+            {activeTab === 'apps' && <AppsStudio apiKey={apiKey} />}
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-white/40 text-sm">Studio components not loaded</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Settings Modal */}

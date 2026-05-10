@@ -1,0 +1,21 @@
+{
+  "mode": "interactive-for-risk-yolo-for-safe",
+  "model_profiles": {
+    "architecture": "quality",
+    "implementation": "balanced",
+    "review": "quality",
+    "test": "balanced",
+    "docs": "budget"
+  },
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "security_review": true,
+    "release_review": true
+  },
+  "parallelization": {
+    "enabled": true,
+    "only_for_independent_tasks": true
+  }
+}

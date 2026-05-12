@@ -36,3 +36,8 @@ out/
 .env
 .env.*
 !.env.example
+
+# More-of-Less generated storage (test artifacts)
+apps/api/storage/
+storage/
+/tmp/mol-*

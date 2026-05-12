@@ -1,0 +1,24 @@
+{
+  "id": "job_1778600621240_y87csuo",
+  "projectId": "project_1778600621219_8u0h1mg",
+  "ownerUserId": "local-user",
+  "type": "music-video",
+  "status": "cancelled",
+  "input": {
+    "projectId": "project_1778600621219_8u0h1mg",
+    "style": "cinematic drill",
+    "characterIds": [
+      "character_1778600621233_je966"
+    ]
+  },
+  "plan": null,
+  "progress": 0,
+  "stage": "enqueued",
+  "message": "Cancelled by user",
+  "artifacts": [],
+  "providerRoute": null,
+  "costEstimate": null,
+  "error": null,
+  "createdAt": "2026-05-12T15:43:41.240Z",
+  "updatedAt": "2026-05-12T15:43:41.249Z"
+}

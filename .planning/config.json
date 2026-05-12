@@ -17,5 +17,16 @@
   "parallelization": {
     "enabled": true,
     "only_for_independent_tasks": true
+  },
+  "mandatory_mcp_tools": {
+    "jcodemunch": {
+      "package": "jcodemunch-mcp",
+      "install": "pip install jcodemunch-mcp && jcodemunch-mcp init",
+      "register": "claude mcp add -s user jcodemunch jcodemunch-mcp",
+      "source": "https://github.com/jgravelle/jcodemunch-mcp",
+      "purpose": "AST-based codebase symbol retrieval — 95%+ token reduction vs brute-force file reads",
+      "required_before": ["any code exploration", "any file modification", "any symbol rename or deletion"],
+      "enforcement": "mandatory"
+    }
   }
 }

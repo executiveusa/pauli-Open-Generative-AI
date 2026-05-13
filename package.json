@@ -6,8 +6,8 @@
   "version": "1.0.10",
   "workspaces": [
     "packages/studio",
-    "packages/Vibe-Workflow/packages/workflow-builder",
-    "packages/Open-Poe-AI/packages/agents"
+    "stubs/workflow-builder",
+    "stubs/ai-agent"
   ],
   "scripts": {
     "dev": "next dev",

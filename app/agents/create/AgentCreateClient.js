@@ -1,7 +1,7 @@
 "use client";
 
 import { CreateAgentPage } from "ai-agent";
-import "ai-agent/dist/tailwind.css";
+// ai-agent/dist/tailwind.css omitted — submodule not present in this build
 import { useCallback, useEffect, useRef } from "react";
 import axios from "axios";
 

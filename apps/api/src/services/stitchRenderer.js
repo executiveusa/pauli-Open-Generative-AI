@@ -72,20 +72,27 @@ export async function stitchAndRender(job, plan, sceneResults, opts = {}) {
   }
 
   // 5. Write completion record
+  const renderOk = concatResult.ok;
   const completion = {
-    ok: true,
+    ok: renderOk,
     jobId: job.id,
     projectId: job.projectId,
     totalScenes: sceneResults.length,
     stitchedScenes: clips.length,
-    finalPath: `${projectDir}/artifacts/video/final.mp4`,
-    thumbnailPath: `${projectDir}/artifacts/thumbnails/thumb.jpg`,
+    finalPath: renderOk ? `${projectDir}/artifacts/video/final.mp4` : null,
+    thumbnailPath: renderOk ? `${projectDir}/artifacts/thumbnails/thumb.jpg` : null,
     completedAt: new Date().toISOString(),
-    ffmpegAvailable: concatResult.ok,
+    ffmpegAvailable: renderOk,
   };
 
   await writeJson(`${projectDir}/completion.json`, completion);
-  await db.jobs.patch(job.id, { progress: 1, stage: 'done', message: 'Render complete', status: 'succeeded' });
+  // Drive status through state machine so transitions remain valid
+  await db.jobs.patch(job.id, {
+    progress: 1,
+    stage: 'done',
+    message: renderOk ? 'Render complete' : 'Render failed — FFmpeg unavailable or concat error',
+    status: renderOk ? 'succeeded' : 'failed',
+  });
 
   return completion;
 }
@@ -126,8 +133,16 @@ export async function remakeScenes(parentJob, remakeJob, sceneIds, changes, exis
 
   const modifiedPlan = { ...parentPlan, scenes: modifiedScenes };
 
+  // Load project characters so continuity/LoRA/trigger-word logic is preserved
+  const passportIds = parentPlan.characterIds ?? parentJob.input?.characterIds ?? [];
+  const characterPassports = (
+    await Promise.all(passportIds.map(id => db.characters.get(id)))
+  ).filter(Boolean);
+
   // Generate only modified scenes
-  const { sceneResults: newResults } = await generateScenes(remakeJob, modifiedPlan, [], {});
+  const { sceneResults: newResults } = await generateScenes(
+    remakeJob, modifiedPlan, characterPassports, parentJob.input?.providerOpts ?? {},
+  );
 
   // Merge with existing results
   const merged = existingSceneResults.map(s => {

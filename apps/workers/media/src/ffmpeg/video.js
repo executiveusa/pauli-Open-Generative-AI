@@ -13,20 +13,24 @@ export async function concatClips({ clips, outputPath, crossfade = false }) {
     return concatWithCrossfade({ clips, outputPath });
   }
   // Write concat manifest to temp
-  const { writeFile } = await import('node:fs/promises');
+  const { writeFile, unlink } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');
   const manifest = clips.map(p => `file '${p}'`).join('\n');
   const manifestPath = join(tmpdir(), `mol_concat_${Date.now()}.txt`);
   await writeFile(manifestPath, manifest);
 
-  return runFfmpeg([
-    '-y',
-    '-f', 'concat', '-safe', '0',
-    '-i', manifestPath,
-    '-c', 'copy',
-    outputPath,
-  ]);
+  try {
+    return await runFfmpeg([
+      '-y',
+      '-f', 'concat', '-safe', '0',
+      '-i', manifestPath,
+      '-c', 'copy',
+      outputPath,
+    ]);
+  } finally {
+    await unlink(manifestPath).catch(() => {});
+  }
 }
 
 async function concatWithCrossfade({ clips, outputPath }) {

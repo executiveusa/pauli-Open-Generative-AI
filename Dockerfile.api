@@ -5,7 +5,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache ffmpeg tini
+RUN apk add --no-cache ffmpeg tini && \
+    addgroup -S mol && adduser -S mol -G mol
 
 ENV NODE_ENV=production \
     API_PORT=8000 \
@@ -15,7 +16,9 @@ ENV NODE_ENV=production \
 COPY apps/api/package.json ./
 COPY apps/api/src ./src
 
-RUN mkdir -p /app/storage /app/data
+RUN mkdir -p /app/storage /app/data && chown -R mol:mol /app
+
+USER mol
 
 EXPOSE 8000
 

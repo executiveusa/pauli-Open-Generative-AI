@@ -4,7 +4,7 @@
  * Interface designed so S3/R2 can replace this later.
  */
 
-import { mkdir, writeFile, readFile, stat } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, stat, unlink } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 
@@ -65,6 +65,17 @@ export async function exists(relPath) {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Deletes a JSON document (best-effort — ignores ENOENT).
+ */
+export async function deleteJson(relPath) {
+  try {
+    await unlink(storagePath(relPath));
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
   }
 }
 

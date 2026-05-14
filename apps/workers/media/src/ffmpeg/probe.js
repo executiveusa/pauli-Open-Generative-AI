@@ -78,12 +78,18 @@ export async function measureLoudness(filePath) {
   const match = r.stderr.match(/\{[\s\S]*"input_i"[\s\S]*?\}/);
   if (!match) return { ok: false, integratedLoudness: null, truePeak: null,
     error: { code: 'LOUDNORM_PARSE_FAIL', message: 'Could not extract loudnorm data' } };
-  const json = JSON.parse(match[0]);
+  let parsed;
+  try {
+    parsed = JSON.parse(match[0]);
+  } catch {
+    return { ok: false, integratedLoudness: null, truePeak: null,
+      error: { code: 'LOUDNORM_PARSE_FAIL', message: 'Invalid loudnorm JSON payload' } };
+  }
   return {
     ok: true,
-    integratedLoudness: parseFloat(json.input_i),
-    truePeak: parseFloat(json.input_tp),
-    range: parseFloat(json.input_lra),
-    threshold: parseFloat(json.input_thresh),
+    integratedLoudness: parseFloat(parsed.input_i),
+    truePeak: parseFloat(parsed.input_tp),
+    range: parseFloat(parsed.input_lra),
+    threshold: parseFloat(parsed.input_thresh),
   };
 }

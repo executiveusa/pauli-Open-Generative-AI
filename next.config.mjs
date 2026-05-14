@@ -9,10 +9,11 @@ const nextConfig = {
       { protocol: 'https', hostname: '**.muapi.ai' },
     ],
   },
-  // Redirect bare root to mol dashboard
+  // Redirect bare root — env-driven for white-label builds
   async redirects() {
+    const dest = process.env.NEXT_PUBLIC_ROOT_REDIRECT ?? '/mol/dashboard';
     return [
-      { source: '/', destination: '/mol/dashboard', permanent: false },
+      { source: '/', destination: dest.startsWith('/') ? dest : `/${dest}`, permanent: false },
     ];
   },
 };

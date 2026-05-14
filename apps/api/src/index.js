@@ -33,10 +33,12 @@ const server = http.createServer(async (req, res) => {
   try {
     await match.handler(req, res, match.params);
   } catch (err) {
-    console.error('[api error]', err);
-    // Redact any secret-looking values from error messages in logs
-    const safeMsg = String(err.message).replace(/(sk-|hf_|fal_|nvapi-)[^\s"']*/gi, '[REDACTED]');
-    apiError(res, 500, 'internal_error', safeMsg);
+    const redact = s => String(s ?? '').replace(
+      /(sk-[A-Za-z0-9_-]+|hf_[A-Za-z0-9]+|fal_[A-Za-z0-9_-]+|nvapi-[A-Za-z0-9_-]+|ghp_[A-Za-z0-9]+|AKIA[0-9A-Z]{16}|Bearer\s+[A-Za-z0-9._-]+)/gi,
+      '[REDACTED]',
+    );
+    console.error('[api error]', redact(err.stack ?? err.message ?? String(err)));
+    apiError(res, 500, 'internal_error', redact(err.message));
   }
 });
 

@@ -36,7 +36,7 @@ export async function generateTextToVideo({ prompt, negativePrompt, seed, durati
   }
 
   try {
-    const res = await fetch(`${FAL_BASE}/fal-ai/ltx-video`, {
+    const res = await fetch(`${FAL_BASE}/fal-ai/ltx-video/text-to-video`, {
       method: 'POST',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -73,7 +73,7 @@ export async function generateImageToVideo({ imageUrl, prompt, seed, durationSec
     error: { code: 'NO_KEY', message: 'FAL_KEY not set' } };
 
   try {
-    const res = await fetch(`${FAL_BASE}/fal-ai/ltx-video-v095/image-to-video`, {
+    const res = await fetch(`${FAL_BASE}/fal-ai/ltx-video/image-to-video`, {
       method: 'POST',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({

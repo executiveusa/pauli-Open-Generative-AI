@@ -52,6 +52,7 @@ function ProgressBar({ progress }) {
 export default function JobMonitor({ jobId, onComplete, compact = false }) {
   const [job, setJob] = useState(null);
   const [error, setError] = useState(null);
+  const [connectionWarning, setConnectionWarning] = useState(null);
   const unsubRef = useRef(null);
 
   useEffect(() => {
@@ -64,12 +65,14 @@ export default function JobMonitor({ jobId, onComplete, compact = false }) {
 
     const unsub = subscribeJobEvents(jobId, ({ type, data }) => {
       if (cancelled) return;
-      if (type === 'status') setJob(data);
+      if (type === 'status') { setConnectionWarning(null); setJob(data); }
       if (type === 'done') {
+        setConnectionWarning(null);
         setJob(data);
         onComplete?.(data);
       }
-      if (type === 'error') setError('Connection error — job status may be stale');
+      // SSE errors are transient — show a warning but don't break the UI
+      if (type === 'error') setConnectionWarning('Connection interrupted — waiting for updates…');
     });
     unsubRef.current = unsub;
 
@@ -107,6 +110,11 @@ export default function JobMonitor({ jobId, onComplete, compact = false }) {
 
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 overflow-hidden">
+      {connectionWarning && (
+        <div className="px-5 py-2 bg-amber-950/40 border-b border-amber-900/30 text-xs text-amber-400">
+          {connectionWarning}
+        </div>
+      )}
       {/* Header row */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
         <div className="flex flex-col gap-1">

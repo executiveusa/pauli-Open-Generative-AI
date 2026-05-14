@@ -28,7 +28,8 @@ RUN npm run build:packages && npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-RUN apk add --no-cache ffmpeg tini
+RUN apk add --no-cache ffmpeg tini && \
+    addgroup -S mol && adduser -S mol -G mol
 
 ENV NODE_ENV=production \
     PORT=3000 \
@@ -49,7 +50,9 @@ COPY --from=builder /app/apps/api       ./apps/api
 RUN mkdir -p /app/storage /app/data
 
 COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN chmod +x /start.sh && chown -R mol:mol /app /start.sh
+
+USER mol
 
 EXPOSE 3000 8000
 

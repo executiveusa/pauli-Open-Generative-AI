@@ -82,21 +82,35 @@ export function registerJobs(router) {
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     };
 
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
     send('status', job);
 
-    // Poll for updates every 2s (stub — real impl uses event bus)
-    const interval = setInterval(async () => {
-      const current = await db.jobs.get(params.id);
-      if (!current) { clearInterval(interval); res.end(); return; }
-      send('status', current);
-      if (['succeeded', 'failed', 'cancelled'].includes(current.status)) {
-        clearInterval(interval);
-        send('done', { jobId: current.id, status: current.status });
-        res.end();
-      }
-    }, 2000);
+    let closed = false;
+    let timer = null;
+    req.on('close', () => { closed = true; if (timer) clearTimeout(timer); });
 
-    req.on('close', () => clearInterval(interval));
+    // Self-rescheduling poll — avoids unhandled rejection and tick overlap
+    const tick = async () => {
+      if (closed) return;
+      try {
+        const current = await db.jobs.get(params.id);
+        if (!current || closed) { res.end(); return; }
+        send('status', current);
+        if (['succeeded', 'failed', 'cancelled'].includes(current.status)) {
+          send('done', { jobId: current.id, status: current.status });
+          res.end();
+          return;
+        }
+      } catch (err) {
+        if (!closed) res.write(`: poll error ${String(err.message)}\n\n`);
+      }
+      if (!closed) timer = setTimeout(tick, 2000);
+    };
+    // SSE keepalive comment every 15s so proxies don't drop the connection
+    const heartbeat = setInterval(() => { if (!closed) res.write(': heartbeat\n\n'); }, 15000);
+    req.on('close', () => clearInterval(heartbeat));
+
+    timer = setTimeout(tick, 2000);
   });
 
   // POST /v1/jobs/:id/cancel

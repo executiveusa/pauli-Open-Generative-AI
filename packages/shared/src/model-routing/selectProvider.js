@@ -21,15 +21,19 @@ export function selectProvider(routes, input) {
     hasLocalGpu = false,
   } = input;
 
+  // Providers that require a local GPU to operate
+  const GPU_LOCAL_PROVIDERS = new Set(['local', 'ltx']);
+
   const eligible = routes.filter(route => {
     if (!route.enabled) return false;
-    if (!enabledProviders.includes(route.provider)) return false;
+    // Empty enabledProviders = no restriction (all enabled by default)
+    if (enabledProviders.length > 0 && !enabledProviders.includes(route.provider)) return false;
     if (route.capability !== capability) return false;
     if (route.provider === 'fal' && !allowPaid) return false;
     if (requiresReferenceImages && route.supportsReferenceImages === false) return false;
     if (requiresLoRA && route.supportsLoRA === false) return false;
     if (requiresSeed && route.supportsSeed === false) return false;
-    if (route.requiresGpu && !hasLocalGpu && route.provider === 'local') return false;
+    if (route.requiresGpu && !hasLocalGpu && GPU_LOCAL_PROVIDERS.has(route.provider)) return false;
     if (durationSeconds != null && route.maxDurationSeconds != null) {
       if (durationSeconds > route.maxDurationSeconds) return false;
     }

@@ -105,10 +105,15 @@ export default function MixMasterPage() {
           </div>
         </div>
 
-        {/* Autotune toggle */}
+        {/* Autotune toggle — keyboard accessible via native checkbox */}
         <label className="flex items-center gap-3 cursor-pointer">
-          <div className={`w-10 h-6 rounded-full transition-colors ${form.autotune ? 'bg-violet-600' : 'bg-zinc-700'}`}
-            onClick={() => setForm(f => ({ ...f, autotune: !f.autotune }))}>
+          <input
+            type="checkbox"
+            checked={form.autotune}
+            onChange={e => setForm(f => ({ ...f, autotune: e.target.checked }))}
+            className="sr-only peer"
+          />
+          <div className={`w-10 h-6 rounded-full transition-colors peer-focus:ring-2 peer-focus:ring-violet-500 ${form.autotune ? 'bg-violet-600' : 'bg-zinc-700'}`}>
             <div className={`w-4 h-4 m-1 rounded-full bg-white transition-transform ${form.autotune ? 'translate-x-4' : ''}`} />
           </div>
           <span className="text-sm text-zinc-300">Autotune vocals</span>

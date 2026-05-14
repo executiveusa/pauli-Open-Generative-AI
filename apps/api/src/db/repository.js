@@ -3,7 +3,7 @@
  * MVP: in-memory Maps. Swap out for SQLite/Postgres later via same interface.
  */
 
-import { writeJson, readJson } from '../storage/local.js';
+import { writeJson, readJson, deleteJson } from '../storage/local.js';
 
 class Repository {
   constructor(name) {
@@ -13,8 +13,9 @@ class Repository {
 
   async put(id, value) {
     this._store.set(id, value);
-    // Best-effort durable write
-    writeJson(`db/${this._name}/${id}.json`, value).catch(() => {});
+    writeJson(`db/${this._name}/${id}.json`, value).catch(err => {
+      console.error(`[repository] Failed to persist ${this._name}/${id}:`, err.message);
+    });
     return value;
   }
 
@@ -39,6 +40,7 @@ class Repository {
   }
 
   async delete(id) {
+    deleteJson(`db/${this._name}/${id}.json`).catch(() => {});
     return this._store.delete(id);
   }
 }

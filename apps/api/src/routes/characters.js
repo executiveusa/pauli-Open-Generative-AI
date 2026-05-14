@@ -33,12 +33,22 @@ export function registerCharacters(router) {
     json(res, 200, { items, total: items.length });
   });
 
+  const PATCHABLE_FIELDS = new Set([
+    'displayName', 'promptAnchor', 'negativePromptAnchor', 'triggerWords',
+    'loras', 'referenceImages', 'referenceVideo', 'seedPolicy',
+    'continuityRules', 'consentStatus',
+  ]);
+
   // PATCH /v1/characters/:id
   router.patch('/v1/characters/:id', async (req, res, params) => {
     let body;
     try { body = await readJson(req); } catch { return apiError(res, 400, 'invalid_body', 'Invalid JSON'); }
-    const updated = await db.characters.patch(params.id, body);
+    // Whitelist editable fields to prevent mass-assignment of immutable fields (id, ownerUserId, etc.)
+    const patch = Object.fromEntries(Object.entries(body).filter(([k]) => PATCHABLE_FIELDS.has(k)));
+    const updated = await db.characters.patch(params.id, patch);
     if (!updated) return apiError(res, 404, 'not_found', `Character ${params.id} not found`);
+    const { valid, errors } = validatePassport(updated);
+    if (!valid) return apiError(res, 400, 'validation_error', 'Invalid character passport after patch', errors);
     json(res, 200, updated);
   });
 }

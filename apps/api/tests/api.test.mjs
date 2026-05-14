@@ -1,19 +1,25 @@
 /**
  * Phase 3 integration tests — spin up real HTTP server, test endpoints.
  */
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+// STORAGE_ROOT must be set BEFORE importing any route modules because
+// apps/api/src/storage/local.js captures it at module-load time.
+const TEST_STORAGE_ROOT = mkdtempSync(join(tmpdir(), 'mol-api-test-'));
+process.env.STORAGE_ROOT = TEST_STORAGE_ROOT;
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 
-// We import the router and build a test server inline (no global listen needed)
-import { Router } from '../src/router.js';
-import { json as jsonReply, apiError, CORS_HEADERS } from '../src/middleware.js';
-import { registerHealth }     from '../src/routes/health.js';
-import { registerProjects }   from '../src/routes/projects.js';
-import { registerCharacters } from '../src/routes/characters.js';
-import { registerJobs }       from '../src/routes/jobs.js';
-
-process.env.STORAGE_ROOT = '/tmp/mol-api-test-storage';
+const { Router } = await import('../src/router.js');
+const { apiError, CORS_HEADERS } = await import('../src/middleware.js');
+const { registerHealth }     = await import('../src/routes/health.js');
+const { registerProjects }   = await import('../src/routes/projects.js');
+const { registerCharacters } = await import('../src/routes/characters.js');
+const { registerJobs }       = await import('../src/routes/jobs.js');
 
 // ── Test server ──────────────────────────────────────────────────────────────
 
@@ -71,6 +77,7 @@ test.before(async () => {
 
 test.after(async () => {
   await new Promise(r => server.close(r));
+  rmSync(TEST_STORAGE_ROOT, { recursive: true, force: true });
 });
 
 // ── Health ───────────────────────────────────────────────────────────────────

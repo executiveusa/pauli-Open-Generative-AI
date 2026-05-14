@@ -15,6 +15,18 @@ async function getProvider(providerId) {
       const { generateTextToVideo, generateImageToVideo } = await import('../../../../apps/workers/models/ltx/src/provider.js');
       return { generateTextToVideo, generateImageToVideo };
     }
+    case 'fal': {
+      const { generateTextToVideo, generateImageToVideo } = await import('../../../../apps/workers/models/fal/src/provider.js');
+      return { generateTextToVideo, generateImageToVideo };
+    }
+    case 'huggingface': {
+      const { textToImage } = await import('../../../../apps/workers/models/huggingface/src/provider.js');
+      return { generateTextToVideo: textToImage, generateImageToVideo: textToImage };
+    }
+    case 'muapi': {
+      const { textToVideo, textToImage } = await import('../../../../apps/workers/models/muapi/src/provider.js');
+      return { generateTextToVideo: textToVideo, generateImageToVideo: textToImage };
+    }
     case 'stub':
     default: {
       const { generateTextToVideo, generateImageToVideo } = await import('../../../../apps/workers/models/stub/src/provider.js');

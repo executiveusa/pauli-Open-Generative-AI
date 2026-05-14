@@ -110,6 +110,17 @@ function cutScenes({ durationSeconds, minSceneSeconds, maxSceneSeconds, beatBias
     index++;
   }
 
+  // Ensure at least one scene for tracks shorter than minSceneSeconds
+  if (scenes.length === 0 && durationSeconds > 0) {
+    scenes.push({
+      sceneId: 'scene_001',
+      index: 0,
+      startSeconds: 0,
+      endSeconds: Math.round(durationSeconds * 100) / 100,
+      durationSeconds: Math.round(durationSeconds * 100) / 100,
+    });
+  }
+
   return scenes;
 }
 

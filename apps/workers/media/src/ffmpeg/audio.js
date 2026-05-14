@@ -73,6 +73,10 @@ export async function applyCompressor({ inputPath, outputPath, ratio = 4, thresh
  * @param {{ inputs: string[], outputPath: string }} opts
  */
 export async function mixStems({ inputs, outputPath }) {
+  if (!Array.isArray(inputs) || inputs.length === 0) {
+    return { ok: false, command: ['ffmpeg'], stdout: '', stderr: '', outputPaths: [],
+      error: { code: 'INVALID_INPUT', message: 'mixStems requires at least one input file' } };
+  }
   const args = ['-y'];
   for (const p of inputs) args.push('-i', p);
   args.push(

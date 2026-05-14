@@ -12,7 +12,14 @@ echo "[mol] Starting API server on :${API_PORT}"
 node /app/apps/api/src/index.js &
 API_PID=$!
 
-trap 'echo "[mol] Shutting down…"; kill $API_PID 2>/dev/null; wait $API_PID 2>/dev/null; exit 0' TERM INT
-
 echo "[mol] Starting Next.js on :${PORT:-3000}"
-exec /app/node_modules/.bin/next start -p "${PORT:-3000}"
+/app/node_modules/.bin/next start -p "${PORT:-3000}" &
+NEXT_PID=$!
+
+trap 'echo "[mol] Shutting down…"; kill "$API_PID" "$NEXT_PID" 2>/dev/null; wait "$API_PID" "$NEXT_PID" 2>/dev/null; exit 0' TERM INT
+
+# Wait for either process to exit; if one dies, stop both
+wait -n "$API_PID" "$NEXT_PID" 2>/dev/null || true
+echo "[mol] A process exited — stopping remaining…"
+kill "$API_PID" "$NEXT_PID" 2>/dev/null || true
+wait "$API_PID" "$NEXT_PID" 2>/dev/null || true

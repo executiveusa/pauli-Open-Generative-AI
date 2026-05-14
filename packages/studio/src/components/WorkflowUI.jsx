@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { WorkflowBuilder } from "workflow-builder";
+import { WorkflowBuilder } from "../../../../stubs/workflow-builder/dist/index.js";
 import "reactflow/dist/style.css";
 import "react-toastify/dist/ReactToastify.css";
 // workflow-builder/dist/tailwind.css omitted — submodule not present in this build

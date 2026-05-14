@@ -2,7 +2,7 @@
   "version": 2,
   "framework": "nextjs",
   "buildCommand": "next build",
-  "installCommand": "npm install --ignore-scripts",
+  "installCommand": "rm -f packages/Open-Poe-AI/packages/agents/package.json packages/Vibe-Workflow/packages/workflow-builder/package.json && npm install --ignore-scripts",
   "outputDirectory": ".next",
   "rewrites": [
     {

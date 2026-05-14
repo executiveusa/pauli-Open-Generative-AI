@@ -16,10 +16,15 @@ echo "[mol] Starting Next.js on :${PORT:-3000}"
 /app/node_modules/.bin/next start -p "${PORT:-3000}" &
 NEXT_PID=$!
 
-trap 'echo "[mol] Shutting down…"; kill "$API_PID" "$NEXT_PID" 2>/dev/null; wait "$API_PID" "$NEXT_PID" 2>/dev/null; exit 0' TERM INT
+trap 'echo "[mol] Shutting down…"; kill "$API_PID" "$NEXT_PID" 2>/dev/null; wait "$API_PID" 2>/dev/null; wait "$NEXT_PID" 2>/dev/null; exit 0' TERM INT
 
-# Wait for either process to exit; if one dies, stop both
-wait -n "$API_PID" "$NEXT_PID" 2>/dev/null || true
+# Poll for either process dying — avoids BusyBox ash wait -n signal-termination bug
+while kill -0 "$API_PID" 2>/dev/null && kill -0 "$NEXT_PID" 2>/dev/null; do
+  sleep 1
+done
+
 echo "[mol] A process exited — stopping remaining…"
 kill "$API_PID" "$NEXT_PID" 2>/dev/null || true
-wait "$API_PID" "$NEXT_PID" 2>/dev/null || true
+wait "$API_PID" 2>/dev/null || true
+wait "$NEXT_PID" 2>/dev/null || true
+

@@ -1,3 +1,5 @@
+import { buildVisualizerCommand, persistVisualizerPlan } from '../../workers/media/src/visualizer/job.js';
+import { buildMixMasterCommand } from '../../workers/media/src/audio/mixMaster.js';
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
@@ -113,6 +115,27 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && /^\/v1\/jobs\/music-video\/[^/]+\/(generate-scenes|render)$/.test(url.pathname)) {
       const parts = url.pathname.split('/'); const id = parts[4]; const action = parts[5]; const job = db.jobs.get(id); if (!job) return send(res,404,{error:{code:'not_found',message:'job not found'}});
       job.status='running'; job.stage=action; job.updatedAt=now(); pushEvent(id,`Music-video ${action} started`,'running'); return send(res,202,job);
+    }
+
+
+    if (req.method === 'POST' && /^\/v1\/jobs\/[^/]+\/run$/.test(url.pathname)) {
+      const id = url.pathname.split('/')[3]; const job = db.jobs.get(id); if (!job) return send(res,404,{error:{code:'not_found',message:'job not found'}});
+      const body = await readJson(req);
+      const storage = process.env.STORAGE_ROOT || './storage';
+      if (job.type === 'visualizer') {
+        const audioPath = body.inputAudioPath || 'input.wav';
+        const outputPath = body.outputVideoPath || `storage/projects/${job.projectId}/jobs/${id}/artifacts/video/visualizer.mp4`;
+        const cmd = buildVisualizerCommand({ mode: body.mode || 'waveform', inputAudioPath: audioPath, outputVideoPath: outputPath, width: body.width || 1080, height: body.height || 1920 });
+        const planPath = persistVisualizerPlan({ storageRoot: storage, projectId: job.projectId, jobId: id, config: { mode: body.mode || 'waveform', command: cmd } });
+        job.stage='planned'; job.updatedAt=now(); pushEvent(id, 'Visualizer plan generated', 'running');
+        return send(res, 200, { jobId:id, planPath, command: cmd });
+      }
+      if (job.type === 'mix-master') {
+        const cmd = buildMixMasterCommand({ inputAudioPath: body.inputAudioPath || 'input.wav', outputAudioPath: body.outputAudioPath || `storage/projects/${job.projectId}/jobs/${id}/artifacts/audio/master.wav`, preset: body.preset || 'clean-master' });
+        job.stage='planned'; job.updatedAt=now(); pushEvent(id, 'Mix-master plan generated', 'running');
+        return send(res, 200, { jobId:id, command: cmd });
+      }
+      return bad(res, 'run endpoint currently supports visualizer and mix-master jobs');
     }
 
     if (req.method === 'GET' && url.pathname === '/v1/providers') {

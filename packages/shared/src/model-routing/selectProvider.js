@@ -1,3 +1,7 @@
-const priority = ['local','huggingface','comfyui','fal','muapi','stub'];
-function supports(route,input){ if(route.capability!==input.capability||!route.enabled) return false; if(!input.enabledProviders.includes(route.provider)) return false; if(route.provider==='fal'&&!input.allowPaid) return false; if(route.provider==='local'&&route.requiresGpu&&!input.hasLocalGpu) return false; return true; }
-export function selectProvider(routes,input){ const eligible=routes.filter(r=>supports(r,input)).sort((a,b)=>priority.indexOf(a.provider)-priority.indexOf(b.provider)); const route=eligible[0]??{id:'stub-default',capability:input.capability,provider:'stub',modelId:'stub/default',requiresGpu:false,estimatedCost:'free',enabled:true}; return {route, reason: route.id==='stub-default'?'no eligible route; defaulted to stub':`selected ${route.provider} by policy priority`, fallbacks: eligible.slice(1)}; }
+export function selectProvider(routes, input) {
+  const filtered = routes.filter(r=>r.enabled&&input.enabledProviders.includes(r.provider)&&r.capability===input.capability);
+  const rank = ['local','huggingface','comfyui','fal','muapi','stub'];
+  const eligible = filtered.filter(r=> r.provider!=='fal' || input.allowPaid).sort((a,b)=>rank.indexOf(a.provider)-rank.indexOf(b.provider));
+  const route = eligible[0] ?? {id:'stub-default',provider:'stub',capability:input.capability,modelId:'stub',requiresGpu:false,estimatedCost:'free',enabled:true};
+  return { route, reason:`selected ${route.provider} by priority order`, fallbacks: eligible.slice(1) };
+}

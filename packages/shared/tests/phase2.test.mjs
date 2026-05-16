@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { canTransition, assertTransition } from '../src/jobs/mediaJobState.js';
+import { selectProvider } from '../src/model-routing/selectProvider.js';
+import { buildScenePrompt } from '../src/prompts/musicVideoPromptBuilder.js';
+import { validateCharacterPassport, validateMediaJob } from '../src/schemas/entities.js';
+
+test('state machine',()=>{ assert.equal(canTransition('created','queued'),true); assert.equal(canTransition('failed','running'),false); assert.throws(()=>assertTransition('succeeded','running')); });
+test('provider routing',()=>{ const routes=[{id:'local',capability:'text-to-video',provider:'local',modelId:'m1',requiresGpu:true,estimatedCost:'free',enabled:true},{id:'hf',capability:'text-to-video',provider:'huggingface',modelId:'m2',requiresGpu:false,estimatedCost:'free',enabled:true},{id:'fal',capability:'text-to-video',provider:'fal',modelId:'m3',requiresGpu:false,estimatedCost:'high',enabled:true}]; const out=selectProvider(routes,{capability:'text-to-video',preferFree:true,allowPaid:false,hasLocalGpu:false,enabledProviders:['local','huggingface','fal']}); assert.equal(out.route.provider,'huggingface'); });
+test('prompt builder deterministic',()=>{ const input={scene:{sceneId:'s1',visualPrompt:'artist on rooftop',location:'rooftop',seed:123,cameraMotion:'close-up',characterIds:['c1']},characterPassports:[{promptAnchor:'same face',triggerWords:['mol_artist'],negativePromptAnchor:'blurry'}],stylePack:{style:'cinematic drill',theme:'night neon'},providerRoute:{provider:'stub',modelId:'stub/v1'}}; const a=buildScenePrompt(input); const b=buildScenePrompt(input); assert.equal(a.positivePrompt,b.positivePrompt); assert.match(a.positivePrompt,/same face/); assert.match(a.negativePrompt,/blurry/); assert.equal(a.seed,123); });
+test('character passport validation',()=>{ const now=new Date().toISOString(); assert.doesNotThrow(()=>validateCharacterPassport({id:'c1',displayName:'Artist',ownerUserId:'u1',consentStatus:'owned',referenceImages:[],promptAnchor:'same face',triggerWords:['mol_artist'],loras:[],seedPolicy:{baseSeed:1,sceneSeedStrategy:'fixed'},continuityRules:{face:'consistent',wardrobe:'black',colors:['red']},createdAt:now,updatedAt:now})); });
+test('media job invalid status',()=>{ const now=new Date().toISOString(); assert.throws(()=>validateMediaJob({id:'j1',projectId:'p1',ownerUserId:'u1',type:'music-video',status:'done',input:{},progress:0,createdAt:now,updatedAt:now})); });

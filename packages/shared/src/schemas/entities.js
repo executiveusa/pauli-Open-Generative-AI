@@ -1,0 +1,6 @@
+import { MediaJobStatuses } from '../types/core.js';
+const req = (v, n) => { if (v === undefined || v === null || v === '') throw new Error(`${n} is required`); return v; };
+export function validateProject(p){['id','ownerUserId','name','createdAt','updatedAt'].forEach(k=>req(p?.[k],`project.${k}`)); return p;}
+export function validateAsset(a){['id','projectId','ownerUserId','kind','originalFilename','mimeType','storagePath','sha256','createdAt'].forEach(k=>req(a?.[k],`asset.${k}`)); req(a?.provenance?.source,'asset.provenance.source'); req(a?.provenance?.rightsStatus,'asset.provenance.rightsStatus'); return a;}
+export function validateMediaJob(j){['id','projectId','ownerUserId','type','status','input','progress','createdAt','updatedAt'].forEach(k=>req(j?.[k],`job.${k}`)); if(!MediaJobStatuses.includes(j.status)) throw new Error(`invalid job.status: ${j.status}`); return j;}
+export function validateCharacterPassport(c){['id','displayName','ownerUserId','consentStatus','referenceImages','promptAnchor','triggerWords','loras','seedPolicy','continuityRules','createdAt','updatedAt'].forEach(k=>req(c?.[k],`character.${k}`)); if(!Array.isArray(c.referenceImages)) throw new Error('character.referenceImages must be an array'); return c;}

@@ -1,0 +1,9 @@
+{
+  "name": "ai-agent",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./dist/tailwind.css": "./dist/tailwind.css"
+  }
+}

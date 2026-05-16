@@ -1,0 +1,25 @@
+# More-of-Less — Railway deployment configuration
+# Deploy two services in Railway:
+#   Service 1 "api"      → uses Dockerfile.api (this file)
+#   Service 2 "frontend" → point to Vercel OR deploy with root Dockerfile
+#
+# Quick start:
+#   railway login
+#   railway link
+#   railway up
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.api"
+
+[deploy]
+startCommand = "node src/index.js"
+healthcheckPath = "/v1/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Environment variables (set secrets via railway CLI or dashboard — NOT here)
+# railway variables set HF_TOKEN=hf_xxx
+# railway variables set FAL_KEY=xxx
+# railway variables set MUAPI_KEY=xxx

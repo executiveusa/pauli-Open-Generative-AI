@@ -1,1 +1,1 @@
-{ "name":"@moreofless/api", "private":true, "type":"module", "scripts": { "dev":"node src/index.js" } }
+{ "name": "@moreofless/api", "version": "0.1.0", "private": true, "type": "module", "scripts": { "dev": "node --watch src/index.js", "start": "node src/index.js", "test": "node --test tests/*.test.mjs" } }

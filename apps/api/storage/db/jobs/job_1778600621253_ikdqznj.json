@@ -1,0 +1,27 @@
+{
+  "id": "job_1778600621253_ikdqznj",
+  "projectId": "project_1778600621219_8u0h1mg",
+  "ownerUserId": "local-user",
+  "type": "scene-generation",
+  "status": "queued",
+  "input": {
+    "parentJobId": "job_1778600621252_jn8zlfn",
+    "sceneIds": [
+      "scene_004"
+    ],
+    "changes": {
+      "promptDelta": "darker, rain",
+      "seed": 99999
+    }
+  },
+  "plan": null,
+  "progress": 0,
+  "stage": "remake-queued",
+  "message": null,
+  "artifacts": [],
+  "providerRoute": null,
+  "costEstimate": null,
+  "error": null,
+  "createdAt": "2026-05-12T15:43:41.253Z",
+  "updatedAt": "2026-05-12T15:43:41.253Z"
+}

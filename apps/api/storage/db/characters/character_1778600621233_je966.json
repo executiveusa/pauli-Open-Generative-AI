@@ -1,0 +1,30 @@
+{
+  "id": "character_1778600621233_je966",
+  "displayName": "Test Artist",
+  "ownerUserId": "u1",
+  "projectId": "project_1778600621219_8u0h1mg",
+  "consentStatus": "owned",
+  "referenceImages": [],
+  "referenceVideo": null,
+  "promptAnchor": "same young artist, dark skin, dreads",
+  "negativePromptAnchor": "",
+  "triggerWords": [
+    "mol_artist01"
+  ],
+  "loras": [],
+  "seedPolicy": {
+    "baseSeed": 42,
+    "sceneSeedStrategy": "hash-scene"
+  },
+  "continuityRules": {
+    "face": "",
+    "hair": null,
+    "wardrobe": "",
+    "colors": [],
+    "bodyType": null,
+    "locationAnchors": [],
+    "forbiddenChanges": []
+  },
+  "createdAt": "2026-05-12T15:43:41.233Z",
+  "updatedAt": "2026-05-12T15:43:41.233Z"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "char_lucia_001",
+  "publicName": "Lucía Rivera",
+  "locale": "es-MX",
+  "archetype": "Investigative Journalist",
+  "visualIdentity": { "ageRange": "28-34", "hair": "dark curly", "skinTone": "olive" },
+  "wardrobe": ["tan trench coat", "black boots"],
+  "personality": { "traits": ["curious", "brave"], "tone": "grounded" },
+  "backstory": "Raised in Guadalajara, now reporting in CDMX.",
+  "voiceProfile": { "language": "es", "accent": "mexican", "pace": "medium" },
+  "referenceAssets": ["artifact_hero_frame_lucia"],
+  "continuityLocks": { "face": true, "wardrobe": true, "colorPalette": ["amber", "charcoal"] },
+  "rights": { "ownership": "licensed", "releaseOnFile": true },
+  "safetyFlags": ["no-minors", "no-public-figure-imitation"],
+  "createdAt": "2026-05-16T00:00:00.000Z",
+  "updatedAt": "2026-05-16T00:00:00.000Z"
+}

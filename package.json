@@ -1,6 +1,6 @@
 {
   "name": "open-generative-ai",
-  "description": "Open-source alternative to Higgsfield AI — AI image, video, cinema and lip sync studio",
+  "description": "Open-source alternative to Higgsfield AI \u2014 AI image, video, cinema and lip sync studio",
   "homepage": "https://github.com/Anil-matcha/Open-Generative-AI",
   "private": true,
   "version": "1.0.10",
@@ -25,12 +25,14 @@
     "electron:build": "vite build && electron-builder --mac",
     "electron:build:win": "vite build && electron-builder --win",
     "electron:build:linux": "vite build && electron-builder --linux",
-    "electron:build:all": "vite build && electron-builder --mac --win --linux"
+    "electron:build:all": "vite build && electron-builder --mac --win --linux",
+    "cynthia:doctor": "node tools/cynthia-cli/src/index.mjs doctor",
+    "cynthia:check-connector": "node tools/cynthia-cli/src/index.mjs check-connector"
   },
   "build": {
     "appId": "ai.generative.open",
     "productName": "Open Generative AI",
-    "copyright": "Copyright © 2025",
+    "copyright": "Copyright \u00a9 2025",
     "directories": {
       "output": "release"
     },

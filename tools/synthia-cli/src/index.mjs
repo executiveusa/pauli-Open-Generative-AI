@@ -4,7 +4,7 @@ import { getFalFallbackRoute, supportedConnectors, verifyConnector } from './con
 async function main() {
   const [command, arg] = process.argv.slice(2);
   if (command === 'doctor') {
-    console.log(JSON.stringify({ app: 'Cynthia Studio LatAm CLI', connectors: supportedConnectors, falFallback: getFalFallbackRoute() }, null, 2));
+    console.log(JSON.stringify({ app: 'Synthia Studio LatAm CLI', connectors: supportedConnectors, falFallback: getFalFallbackRoute() }, null, 2));
     return;
   }
 
@@ -15,10 +15,10 @@ async function main() {
     return;
   }
 
-  console.log('Usage:\n  cynthia doctor\n  cynthia check-connector <openclip|gdrive|onedrive>');
+  console.log('Usage:\n  synthia doctor\n  synthia check-connector <openclip|gdrive|onedrive>');
 }
 
 main().catch((error) => {
-  console.error(`[cynthia-cli] ${error.message}`);
+  console.error(`[synthia-cli] ${error.message}`);
   process.exit(1);
 });

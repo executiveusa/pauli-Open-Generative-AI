@@ -1,4 +1,4 @@
-# Cynthia Studio LatAm Build Tracker
+# Synthia Studio LatAm Build Tracker
 
 ## Build Status Checklist
 - [x] Phase 0 — Repo audit and build baseline
@@ -19,5 +19,5 @@
 - Baseline validation commands are captured in completion notes.
 
 ## Phase 1 Notes
-- Added new Cynthia domain schemas and validators for Character Passport, Storyboard, Shot, Generation Job, and Locale Pack.
+- Added new Synthia domain schemas and validators for Character Passport, Storyboard, Shot, Generation Job, and Locale Pack.
 - Added seed examples and automated schema tests.

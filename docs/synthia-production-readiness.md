@@ -1,4 +1,4 @@
-# Cynthia Studio LatAm — Production Readiness Deep Dive (May 16, 2026)
+# Synthia Studio LatAm — Production Readiness Deep Dive (May 16, 2026)
 
 ## Current Distance to Production
 **Estimated readiness: ~45%** for a managed beta, **~25%** for enterprise-grade production.
@@ -6,7 +6,7 @@
 ## What is already in place
 - Multi-surface product shell exists (Next.js app, Electron shell, reusable studio package).
 - Existing media worker abstractions and provider folders exist (local, Hugging Face, MuAPI, fal).
-- Baseline shared schema package and initial Phase 0/1 Cynthia documentation now exist.
+- Baseline shared schema package and initial Phase 0/1 Synthia documentation now exist.
 
 ## Critical gaps to launch video creation reliably
 1. **Durable job orchestration**
@@ -21,7 +21,7 @@
    - BYOK needs encrypted server-side custody and redacted logs.
 
 ## OpenClip + Drive integrations plan
-- Added CLI scaffolding (`tools/cynthia-cli`) with connector verification placeholders for:
+- Added CLI scaffolding (`tools/synthia-cli`) with connector verification placeholders for:
   - OpenClip
   - Google Drive
   - Microsoft OneDrive

@@ -1,4 +1,4 @@
-# Cynthia Studio LatAm Architecture (Incremental Upgrade)
+# Synthia Studio LatAm Architecture (Incremental Upgrade)
 
 ## Direction
 Incrementally evolve current launcher UX into a cinematic operating layer while preserving existing Next.js + Electron + workspace topology.
@@ -21,5 +21,5 @@ Incrementally evolve current launcher UX into a cinematic operating layer while 
 - Need immutable consent + rights records attached to each generation job.
 
 ## Compatibility Strategy
-- Preserve existing routes and studios while introducing upgraded Cynthia paths behind feature flags.
+- Preserve existing routes and studios while introducing upgraded Synthia paths behind feature flags.
 - Provide typed placeholder provider adapters when real provider integrations are unavailable.

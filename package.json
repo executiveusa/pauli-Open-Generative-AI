@@ -26,8 +26,8 @@
     "electron:build:win": "vite build && electron-builder --win",
     "electron:build:linux": "vite build && electron-builder --linux",
     "electron:build:all": "vite build && electron-builder --mac --win --linux",
-    "cynthia:doctor": "node tools/cynthia-cli/src/index.mjs doctor",
-    "cynthia:check-connector": "node tools/cynthia-cli/src/index.mjs check-connector"
+    "synthia:doctor": "node tools/synthia-cli/src/index.mjs doctor",
+    "synthia:check-connector": "node tools/synthia-cli/src/index.mjs check-connector"
   },
   "build": {
     "appId": "ai.generative.open",

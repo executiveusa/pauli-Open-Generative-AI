@@ -20,9 +20,9 @@
 5. **Security hardening**
    - BYOK needs encrypted server-side custody and redacted logs.
 
-## OpenClip + Drive integrations plan
+## Opus Clip + Drive integrations plan
 - Added CLI scaffolding (`tools/synthia-cli`) with connector verification placeholders for:
-  - OpenClip
+  - Opus Clip
   - Google Drive
   - Microsoft OneDrive
 - This is phase-0 scaffolding only; production implementation still needs:
@@ -38,4 +38,4 @@
 ## Next 3 build steps
 1. Implement Phase 2 Character Passport UI/API flow with durable storage.
 2. Implement job queue + artifact store abstraction and provider route ledger.
-3. Implement OpenClip/GDrive/OneDrive connector adapters behind secure service APIs.
+3. Implement Opus Clip/GDrive/OneDrive connector adapters behind secure service APIs.

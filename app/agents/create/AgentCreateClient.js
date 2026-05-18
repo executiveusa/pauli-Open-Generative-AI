@@ -1,7 +1,6 @@
 "use client";
 
-import { CreateAgentPage } from "ai-agent";
-import "ai-agent/dist/tailwind.css";
+import { CreateAgentPage } from "../../../stubs/ai-agent/dist/index.js";
 import { useCallback, useEffect, useRef } from "react";
 import axios from "axios";
 

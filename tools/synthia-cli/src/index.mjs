@@ -9,13 +9,13 @@ async function main() {
   }
 
   if (command === 'check-connector') {
-    if (!arg) throw new Error('Usage: check-connector <openclip|gdrive|onedrive>');
+    if (!arg) throw new Error('Usage: check-connector <opusclip|gdrive|onedrive>');
     const result = await verifyConnector(arg);
     console.log(JSON.stringify(result, null, 2));
     return;
   }
 
-  console.log('Usage:\n  synthia doctor\n  synthia check-connector <openclip|gdrive|onedrive>');
+  console.log('Usage:\n  synthia doctor\n  synthia check-connector <opusclip|gdrive|onedrive>');
 }
 
 main().catch((error) => {

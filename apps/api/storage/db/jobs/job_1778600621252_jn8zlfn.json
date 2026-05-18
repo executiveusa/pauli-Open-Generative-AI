@@ -1,0 +1,20 @@
+{
+  "id": "job_1778600621252_jn8zlfn",
+  "projectId": "project_1778600621219_8u0h1mg",
+  "ownerUserId": "local-user",
+  "type": "music-video",
+  "status": "queued",
+  "input": {
+    "projectId": "project_1778600621219_8u0h1mg"
+  },
+  "plan": null,
+  "progress": 0,
+  "stage": "enqueued",
+  "message": "Job queued",
+  "artifacts": [],
+  "providerRoute": null,
+  "costEstimate": null,
+  "error": null,
+  "createdAt": "2026-05-12T15:43:41.252Z",
+  "updatedAt": "2026-05-12T15:43:41.252Z"
+}

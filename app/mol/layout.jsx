@@ -6,12 +6,16 @@ import { usePathname } from 'next/navigation';
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 
 const NAV_LINKS = [
-  { href: '/mol/dashboard',        label: 'Dashboard'    },
-  { href: '/mol/music-video',      label: 'Music Video'  },
-  { href: '/mol/visualizer',       label: 'Visualizer'   },
-  { href: '/mol/mix-master',       label: 'Mix & Master' },
-  { href: '/mol/character-lab',    label: 'Characters'   },
-  { href: '/mol/workflow-monitor', label: 'Monitor'      },
+  { href: '/mol/dashboard',          label: 'Dashboard'       },
+  { href: '/characters',             label: 'Characters'      },
+  { href: '/mol/cine-studio',        label: 'Cine Studio'     },
+  { href: '/mol/hero-frame',         label: 'Hero Frame'      },
+  { href: '/storyboards',            label: 'Storyboards'     },
+  { href: '/mol/talking-character',  label: 'Talking'         },
+  { href: '/mol/jobs',               label: 'Jobs'            },
+  { href: '/mol/music-video',        label: 'Music Video'     },
+  { href: '/mol/mix-master',         label: 'Mix & Master'    },
+  { href: '/settings/providers',     label: 'Providers'       },
 ];
 
 export default function MolLayout({ children }) {

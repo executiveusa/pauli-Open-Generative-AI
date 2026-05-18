@@ -1,0 +1,56 @@
+{
+  "id": "character_1716000000000_abc1234",
+  "publicName": "Valentina Reyes",
+  "locale": "es-MX",
+  "archetype": "protagonist",
+  "ageBand": "adult",
+  "bodyType": "curvy, athletic, 5'6\", confident posture",
+  "facialDescription": "oval face, high cheekbones, expressive dark brown eyes, full lips with natural pigment, subtle laugh lines, strong brow",
+  "hairDescription": "long wavy dark brown hair with subtle caramel highlights, usually worn loose or in a high ponytail",
+  "skinTone": "warm medium-dark brown, morena clara, golden undertones",
+  "wardrobeCore": "modern LatAm street style — fitted jeans, graphic crop tops, leather jacket, white sneakers; professional look: blazer over simple blouse",
+  "accessories": "gold hoop earrings, thin gold necklace with small cross pendant, occasional silver rings",
+  "backstory": "Valentina grew up in a working-class neighborhood in CDMX. The daughter of a seamstress and a mechanic, she became the first in her family to attend university, studying marketing. She now runs a small social media agency serving local small businesses.",
+  "personalityTraits": ["resilient", "witty", "empathetic", "ambitious", "sarcastic when stressed"],
+  "speechRegister": "informal",
+  "dialectAccent": "Mexican Spanish, CDMX accent, occasional chilango slang (güey, wey, padre)",
+  "voiceProfile": {
+    "provider": "elevenlabs",
+    "language": "es-MX",
+    "voice": "Valentina-MX-v2",
+    "speed": 1.05,
+    "pitch": 0
+  },
+  "referenceAssets": [
+    {
+      "type": "image",
+      "url": "/reference/valentina-face-ref-001.jpg",
+      "description": "Face reference: straight-on, natural light, no makeup"
+    },
+    {
+      "type": "image",
+      "url": "/reference/valentina-wardrobe-ref-001.jpg",
+      "description": "Wardrobe reference: street style, leather jacket"
+    }
+  ],
+  "continuityLocks": {
+    "face": true,
+    "hair": true,
+    "wardrobe": false,
+    "bodyType": true
+  },
+  "rights": {
+    "consentStatus": "consented",
+    "commercialUse": true,
+    "likenessTrainingAllowed": false,
+    "voiceCloningAllowed": true,
+    "isMinor": false,
+    "isPoliticalFigure": false,
+    "revocationContact": "rights@cynthiastudio.ai",
+    "expiresAt": "2027-05-16T00:00:00.000Z"
+  },
+  "safetyFlags": [],
+  "ownerUserId": "user_studio_001",
+  "createdAt": "2026-05-16T00:00:00.000Z",
+  "updatedAt": "2026-05-16T00:00:00.000Z"
+}

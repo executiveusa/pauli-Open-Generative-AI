@@ -8,7 +8,7 @@ const STORAGE_ROOT = process.env.STORAGE_ROOT
   : join(process.cwd(), 'apps', 'api', 'storage');
 
 const KEYS_DIR = join(STORAGE_ROOT, 'db', 'keys');
-const PROVIDERS = ['openai', 'anthropic', 'runwayml', 'replicate', 'elevenlabs', 'google', 'together', 'mistral'];
+const PROVIDERS = ['openai', 'anthropic', 'runway', 'replicate', 'elevenlabs', 'google', 'together', 'mistral', 'kling', 'seedance', 'wan', 'muapi', 'fal'];
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });

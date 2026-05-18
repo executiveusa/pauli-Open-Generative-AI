@@ -198,7 +198,7 @@ export default function JobTracker({ jobId, onComplete, onError, locale = 'en' }
             {job.artifacts.map(artifact => (
               <a
                 key={artifact.id}
-                href={`/api/artifacts/${artifact.id}`}
+                href={`/api/v1/artifacts/${artifact.id}`}
                 download={artifact.filename}
                 className="flex items-center gap-3 rounded-lg bg-zinc-800/60 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
               >

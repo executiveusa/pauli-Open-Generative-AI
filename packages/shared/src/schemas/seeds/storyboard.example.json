@@ -1,0 +1,28 @@
+{
+  "id": "sb_noche_001",
+  "title": "Noche en Reforma",
+  "language": "es",
+  "locale": "es-MX",
+  "characters": ["char_lucia_001"],
+  "locations": ["loc_reforma_avenue"],
+  "shots": [
+    {
+      "id": "shot_001",
+      "order": 1,
+      "action": "Lucía exits a taxi and scans the avenue lights.",
+      "cameraPreset": "wide_establishing",
+      "motionPreset": "dolly_in_slow",
+      "lens": "anamorphic",
+      "focalLength": "35mm",
+      "emotionalBeat": "anticipation",
+      "dialogue": "Esta noche cambia todo.",
+      "startFrameArtifactId": "artifact_frame_001_start",
+      "endFrameArtifactId": "artifact_frame_001_end",
+      "continuityLocks": { "character": true },
+      "modelPreference": { "provider": "stub", "model": "cine-v1" }
+    }
+  ],
+  "targetAspectRatio": "16:9",
+  "durationSeconds": 8,
+  "continuityMode": "strict"
+}

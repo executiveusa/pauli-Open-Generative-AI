@@ -2,6 +2,7 @@
 import { Geist } from 'next/font/google';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import NIMStatusBadge from '@/components/mol/NIMStatusBadge';
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 
@@ -35,7 +36,7 @@ function MolNav() {
         <span className="h-5 w-5 rounded bg-violet-500 inline-block" />
         More<span className="text-violet-400">-of-</span>Less
       </Link>
-      <div className="flex gap-0.5 overflow-x-auto scrollbar-none">
+      <div className="flex gap-0.5 overflow-x-auto scrollbar-none flex-1">
         {NAV_LINKS.map(l => {
           const active = pathname.startsWith(l.href);
           return (
@@ -50,6 +51,9 @@ function MolNav() {
             </Link>
           );
         })}
+      </div>
+      <div className="ml-2 shrink-0">
+        <NIMStatusBadge />
       </div>
     </nav>
   );

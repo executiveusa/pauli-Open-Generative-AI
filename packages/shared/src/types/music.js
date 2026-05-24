@@ -69,6 +69,8 @@ export function makeMusicGenerationRequest(partial = {}) {
 
     referenceAudioAssetId: partial.referenceAudioAssetId ?? null,
     sourceAudioAssetId: partial.sourceAudioAssetId ?? null,
+    startSeconds: partial.startSeconds ?? null,
+    endSeconds: partial.endSeconds ?? null,
     repaintRange: partial.repaintRange ?? null,
     vocalStyle: partial.vocalStyle ?? null,
 

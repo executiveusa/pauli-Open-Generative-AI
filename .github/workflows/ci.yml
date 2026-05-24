@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      LOCAL_DEV_AUTH: "true"
+      STORAGE_ROOT: /tmp/mol-test-storage
+      NVIDIA_NIM_PROXY_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Run tenant isolation tests
+        run: npm run test:tenant
+      - name: Run API tests
+        run: npm run test:api
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      NEXTAUTH_SECRET: ci-secret-not-real
+      NEXTAUTH_URL: http://localhost:3000
+      DATABASE_URL: "file:./dev.db"
+      LOCAL_DEV_AUTH: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Generate Prisma client
+        run: npm run db:generate
+      - run: npm run build
+
+  production-readiness-check:
+    name: Production Readiness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check no local-user in production paths
+        run: |
+          # Fail if 'local-user' appears as a hardcoded value (not in comments or tests)
+          HITS=$(grep -rn "local-user" app/api --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" | grep -v "//.*local-user" | grep -v "test" | grep -v "LOCAL_DEV_AUTH" || true)
+          if [ -n "$HITS" ]; then
+            echo "ERROR: 'local-user' found in production API routes:"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "OK: No 'local-user' in production paths"
+      - name: Check no raw secrets in env.example
+        run: |
+          # Fail if real-looking API keys appear in committed env files
+          HITS=$(grep -E "(sk-[A-Za-z0-9]{20,}|nvapi-[A-Za-z0-9]{20,}|hf_[A-Za-z0-9]{20,})" .env.example || true)
+          if [ -n "$HITS" ]; then
+            echo "ERROR: Real-looking API keys found in .env.example:"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "OK: No real API keys in .env.example"

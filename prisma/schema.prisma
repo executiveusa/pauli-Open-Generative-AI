@@ -126,26 +126,26 @@ enum AuditAction {
 // ─── Identity ──────────────────────────────────────────────────────────────
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
+  id            String    @id @default(cuid())
+  email         String    @unique
   name          String?
   image         String?
   emailVerified DateTime?
-  locale        String   @default("en")
-  timezone      String   @default("UTC")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  locale        String    @default("en")
+  timezone      String    @default("UTC")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
   // Auth.js / NextAuth relations
-  accounts      Account[]
-  sessions      Session[]
+  accounts Account[]
+  sessions Session[]
 
-  memberships   Membership[]
-  ownedOrgs     Organization[]   @relation("OrgOwner")
-  createdProjects Project[]      @relation("ProjectCreator")
-  auditEvents   AuditEvent[]     @relation("AuditActor")
-  createdJobs   GenerationJob[]  @relation("JobCreator")
+  memberships       Membership[]
+  ownedOrgs         Organization[]      @relation("OrgOwner")
+  createdProjects   Project[]           @relation("ProjectCreator")
+  auditEvents       AuditEvent[]        @relation("AuditActor")
+  createdJobs       GenerationJob[]     @relation("JobCreator")
   createdCharacters CharacterPassport[] @relation("CharacterCreator")
 }
 
@@ -191,45 +191,46 @@ model VerificationToken {
 // ─── Tenancy ───────────────────────────────────────────────────────────────
 
 model Organization {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String    @id @default(cuid())
+  slug        String    @unique
   name        String
   displayName String?
   logoUrl     String?
-  country     String   @default("US")
-  locale      String   @default("en")
-  timezone    String   @default("UTC")
-  plan        String   @default("free")
+  country     String    @default("US")
+  locale      String    @default("en")
+  timezone    String    @default("UTC")
+  plan        String    @default("free")
   ownerId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  owner         User           @relation("OrgOwner", fields: [ownerId], references: [id])
-  memberships   Membership[]
-  workspaces    Workspace[]
-  brandKits     BrandKit[]
-  projects      Project[]
-  credentials   ProviderCredential[]
-  usageLedger   UsageLedger[]
-  billingAccount BillingAccount?
-  auditEvents   AuditEvent[]
-  webhookEvents WebhookEvent[]
+  owner             User                 @relation("OrgOwner", fields: [ownerId], references: [id])
+  memberships       Membership[]
+  workspaces        Workspace[]
+  brandKits         BrandKit[]
+  projects          Project[]
+  credentials       ProviderCredential[]
+  usageLedger       UsageLedger[]
+  billingAccount    BillingAccount?
+  auditEvents       AuditEvent[]
+  webhookEvents     WebhookEvent[]
+  CharacterPassport CharacterPassport[]
 
   @@index([ownerId])
 }
 
 model Workspace {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   name           String
   slug           String
   description    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
-  organization Organization  @relation(fields: [organizationId], references: [id])
+  organization Organization        @relation(fields: [organizationId], references: [id])
   memberships  Membership[]
   projects     Project[]
   characters   CharacterPassport[]
@@ -239,15 +240,15 @@ model Workspace {
 }
 
 model Membership {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   userId         String
   organizationId String
   workspaceId    String?
-  role           Role     @default(viewer)
+  role           Role      @default(viewer)
   invitedAt      DateTime?
   acceptedAt     DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -261,17 +262,17 @@ model Membership {
 // ─── Brand ─────────────────────────────────────────────────────────────────
 
 model BrandKit {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   name           String
-  accentColor    String   @default("#7c3aed")
+  accentColor    String    @default("#7c3aed")
   logoUrl        String?
   fontPrimary    String?
   fontDisplay    String?
   voiceTone      String?
   styleGuide     Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -283,29 +284,29 @@ model BrandKit {
 // ─── Projects ──────────────────────────────────────────────────────────────
 
 model Project {
-  id             String   @id @default(cuid())
-  organizationId String
-  workspaceId    String?
-  brandKitId     String?
-  name           String
-  description    String?
-  clientName     String?
-  locale         String   @default("en")
-  status         String   @default("active")
+  id              String    @id @default(cuid())
+  organizationId  String
+  workspaceId     String?
+  brandKitId      String?
+  name            String
+  description     String?
+  clientName      String?
+  locale          String    @default("en")
+  status          String    @default("active")
   createdByUserId String
   updatedByUserId String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  deletedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
-  organization  Organization      @relation(fields: [organizationId], references: [id])
-  workspace     Workspace?        @relation(fields: [workspaceId], references: [id])
-  brandKit      BrandKit?         @relation(fields: [brandKitId], references: [id])
-  createdBy     User              @relation("ProjectCreator", fields: [createdByUserId], references: [id])
-  characters    CharacterPassport[]
-  storyboards   Storyboard[]
-  assets        Asset[]
-  jobs          GenerationJob[]
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  workspace    Workspace?          @relation(fields: [workspaceId], references: [id])
+  brandKit     BrandKit?           @relation(fields: [brandKitId], references: [id])
+  createdBy    User                @relation("ProjectCreator", fields: [createdByUserId], references: [id])
+  characters   CharacterPassport[]
+  storyboards  Storyboard[]
+  assets       Asset[]
+  jobs         GenerationJob[]
 
   @@index([organizationId])
   @@index([workspaceId])
@@ -314,26 +315,26 @@ model Project {
 // ─── Characters ────────────────────────────────────────────────────────────
 
 model CharacterPassport {
-  id             String        @id @default(cuid())
-  organizationId String
-  workspaceId    String?
-  projectId      String?
+  id              String  @id @default(cuid())
+  organizationId  String
+  workspaceId     String?
+  projectId       String?
   createdByUserId String
   updatedByUserId String?
 
-  displayName    String
-  internalName   String?
-  locale         String        @default("en")
-  country        String?
-  ageBand        String?
-  archetype      String?
+  displayName  String
+  internalName String?
+  locale       String  @default("en")
+  country      String?
+  ageBand      String?
+  archetype    String?
 
   faceSignature  String?
   bodySignature  String?
   hair           String?
   skinTone       String?
   wardrobeCore   String?
-  accessories    String[]      @default([])
+  accessories    String[] @default([])
   personality    String?
   backstory      String?
   speechRegister String?
@@ -350,45 +351,45 @@ model CharacterPassport {
   canonicalHeroFrameArtifactId String?
   referenceAssets              Json?
 
-  allowedUses                String[] @default([])
-  consentStatus              ConsentStatus @default(unknown)
-  commercialUseAllowed       Boolean  @default(false)
-  likenessTrainingAllowed    Boolean  @default(false)
-  voiceCloningAllowed        Boolean  @default(false)
-  minorFlag                  Boolean  @default(false)
-  politicalLikenessFlag      Boolean  @default(false)
-  safetyFlags                SafetyFlag[] @default([])
+  allowedUses             String[]      @default([])
+  consentStatus           ConsentStatus @default(unknown)
+  commercialUseAllowed    Boolean       @default(false)
+  likenessTrainingAllowed Boolean       @default(false)
+  voiceCloningAllowed     Boolean       @default(false)
+  minorFlag               Boolean       @default(false)
+  politicalLikenessFlag   Boolean       @default(false)
+  safetyFlags             SafetyFlag[]  @default([])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  organization    Organization    @relation(fields: [organizationId], references: [id])
-  workspace       Workspace?      @relation(fields: [workspaceId], references: [id])
-  project         Project?        @relation(fields: [projectId], references: [id])
-  createdBy       User            @relation("CharacterCreator", fields: [createdByUserId], references: [id])
-  consentRecords  ConsentRecord[]
-  jobs            GenerationJob[]
-  shots           Shot[]
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  workspace      Workspace?      @relation(fields: [workspaceId], references: [id])
+  project        Project?        @relation(fields: [projectId], references: [id])
+  createdBy      User            @relation("CharacterCreator", fields: [createdByUserId], references: [id])
+  consentRecords ConsentRecord[]
+  jobs           GenerationJob[]
+  shots          Shot[]
 
   @@index([organizationId])
   @@index([projectId])
 }
 
 model ConsentRecord {
-  id                  String        @id @default(cuid())
+  id                  String    @id @default(cuid())
   characterPassportId String
   organizationId      String
-  identityConsent     Boolean       @default(false)
-  voiceConsent        Boolean       @default(false)
-  commercialLicense   Boolean       @default(false)
-  trainingAllowed     Boolean       @default(false)
+  identityConsent     Boolean   @default(false)
+  voiceConsent        Boolean   @default(false)
+  commercialLicense   Boolean   @default(false)
+  trainingAllowed     Boolean   @default(false)
   expiration          DateTime?
   revocationContact   String?
   sourceNotes         String?
-  fileAttachments     String[]      @default([])
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  fileAttachments     String[]  @default([])
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   character CharacterPassport @relation(fields: [characterPassportId], references: [id])
 
@@ -399,18 +400,18 @@ model ConsentRecord {
 // ─── Storyboards & Shots ───────────────────────────────────────────────────
 
 model Storyboard {
-  id             String   @id @default(cuid())
-  organizationId String
-  projectId      String
-  title          String
-  description    String?
-  status         String   @default("draft")
-  aspectRatio    String   @default("16:9")
+  id              String    @id @default(cuid())
+  organizationId  String
+  projectId       String
+  title           String
+  description     String?
+  status          String    @default("draft")
+  aspectRatio     String    @default("16:9")
   durationSeconds Int?
-  locale         String   @default("en")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  deletedAt      DateTime?
+  locale          String    @default("en")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
   project Project @relation(fields: [projectId], references: [id])
   shots   Shot[]
@@ -452,7 +453,7 @@ model Shot {
 // ─── Assets & Artifacts ────────────────────────────────────────────────────
 
 model Asset {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   projectId      String?
   name           String
@@ -462,11 +463,11 @@ model Asset {
   mimeType       String?
   sizeBytes      BigInt?
   durationMs     Int?
-  provenance     String   @default("user-upload")
-  rightsStatus   String   @default("unknown")
+  provenance     String    @default("user-upload")
+  rightsStatus   String    @default("unknown")
   metadata       Json?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   deletedAt      DateTime?
 
   project Project? @relation(fields: [projectId], references: [id])
@@ -498,43 +499,43 @@ model Artifact {
 // ─── Jobs ──────────────────────────────────────────────────────────────────
 
 model GenerationJob {
-  id             String    @id @default(cuid())
-  organizationId String
-  workspaceId    String?
-  projectId      String?
-  shotId         String?
+  id                  String  @id @default(cuid())
+  organizationId      String
+  workspaceId         String?
+  projectId           String?
+  shotId              String?
   characterPassportId String?
-  createdByUserId String
+  createdByUserId     String
 
-  jobType        JobType
-  status         JobStatus  @default(draft)
+  jobType JobType
+  status  JobStatus @default(draft)
 
-  inputPrompt          String   @default("")
-  inputNegativePrompt  String   @default("")
-  inputSpanishPrompt   String   @default("")
-  compiledPrompt       String?
+  inputPrompt            String  @default("")
+  inputNegativePrompt    String  @default("")
+  inputSpanishPrompt     String  @default("")
+  compiledPrompt         String?
   compiledNegativePrompt String?
 
-  routingMode    RoutingMode @default(auto_best)
-  providerId     String?
-  modelId        String?
-  providerJobId  String?
-  routeDecision  Json?
+  routingMode   RoutingMode @default(auto_best)
+  providerId    String?
+  modelId       String?
+  providerJobId String?
+  routeDecision Json?
 
-  parameters     Json?
-  costEstimate   Float?
-  actualCost     Float?
-  usageUnits     Json?
+  parameters   Json?
+  costEstimate Float?
+  actualCost   Float?
+  usageUnits   Json?
 
-  evalResult     Json?
-  failureReason  String?
-  retryCount     Int      @default(0)
-  maxRetries     Int      @default(3)
+  evalResult    Json?
+  failureReason String?
+  retryCount    Int     @default(0)
+  maxRetries    Int     @default(3)
 
-  startedAt      DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   project   Project?           @relation(fields: [projectId], references: [id])
   shot      Shot?              @relation(fields: [shotId], references: [id])
@@ -551,22 +552,22 @@ model GenerationJob {
 // ─── Provider Credentials ──────────────────────────────────────────────────
 
 model ProviderCredential {
-  id             String           @id @default(cuid())
-  organizationId String
-  providerId     String
-  displayName    String
-  credentialType CredentialType
+  id                 String           @id @default(cuid())
+  organizationId     String
+  providerId         String
+  displayName        String
+  credentialType     CredentialType
   encryptedSecretRef String?
-  status         CredentialStatus @default(unknown)
-  lastTestedAt   DateTime?
-  lastUsedAt     DateTime?
-  scopes         String[]         @default([])
-  capabilities   String[]         @default([])
-  metadata       Json?
-  createdByUserId String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  deletedAt      DateTime?
+  status             CredentialStatus @default(unknown)
+  lastTestedAt       DateTime?
+  lastUsedAt         DateTime?
+  scopes             String[]         @default([])
+  capabilities       String[]         @default([])
+  metadata           Json?
+  createdByUserId    String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  deletedAt          DateTime?
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -575,15 +576,15 @@ model ProviderCredential {
 }
 
 model ProviderRoute {
-  id             String   @id @default(cuid())
-  organizationId String
-  routingMode    String
+  id              String   @id @default(cuid())
+  organizationId  String
+  routingMode     String
   primaryProvider String
-  fallbackChain  String[] @default([])
-  rules          Json?
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  fallbackChain   String[] @default([])
+  rules           Json?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([organizationId])
 }
@@ -591,15 +592,15 @@ model ProviderRoute {
 // ─── Billing & Usage ───────────────────────────────────────────────────────
 
 model BillingAccount {
-  id             String   @id @default(cuid())
-  organizationId String   @unique
-  plan           String   @default("free")
-  monthlyBudgetUsd Float  @default(0)
-  currentUsageUsd  Float  @default(0)
-  billingEmail   String?
+  id               String   @id @default(cuid())
+  organizationId   String   @unique
+  plan             String   @default("free")
+  monthlyBudgetUsd Float    @default(0)
+  currentUsageUsd  Float    @default(0)
+  billingEmail     String?
   stripeCustomerId String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id])
 }
@@ -626,17 +627,17 @@ model UsageLedger {
 // ─── Safety & Audit ────────────────────────────────────────────────────────
 
 model SafetyReview {
-  id             String   @id @default(cuid())
-  organizationId String
-  jobId          String?
-  resourceType   String
-  resourceId     String
-  flags          SafetyFlag[] @default([])
-  blocked        Boolean  @default(false)
-  blockReason    String?
+  id               String       @id @default(cuid())
+  organizationId   String
+  jobId            String?
+  resourceType     String
+  resourceId       String
+  flags            SafetyFlag[] @default([])
+  blocked          Boolean      @default(false)
+  blockReason      String?
   reviewedByUserId String?
-  reviewedAt     DateTime?
-  createdAt      DateTime @default(now())
+  reviewedAt       DateTime?
+  createdAt        DateTime     @default(now())
 
   @@index([organizationId])
   @@index([resourceId])
@@ -680,14 +681,14 @@ model AuditEvent {
 }
 
 model WebhookEvent {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   source         String
   eventType      String
   payload        Json
-  processed      Boolean  @default(false)
+  processed      Boolean   @default(false)
   processedAt    DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id])
 
@@ -696,18 +697,18 @@ model WebhookEvent {
 }
 
 model BrowserInspection {
-  id             String   @id @default(cuid())
-  organizationId String?
-  url            String
-  snapshotPath   String?
-  screenshotPath String?
-  consoleErrors  Json?
+  id              String   @id @default(cuid())
+  organizationId  String?
+  url             String
+  snapshotPath    String?
+  screenshotPath  String?
+  consoleErrors   Json?
   networkFailures Json?
-  vitals         Json?
-  markdownReport String?
-  baselineId     String?
-  diffReport     Json?
-  createdAt      DateTime @default(now())
+  vitals          Json?
+  markdownReport  String?
+  baselineId      String?
+  diffReport      Json?
+  createdAt       DateTime @default(now())
 
   @@index([organizationId])
 }

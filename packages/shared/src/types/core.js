@@ -10,7 +10,7 @@ export const MediaJobStatuses = [
 
 export const MediaJobTypes = [
   'music-video', 'visualizer', 'mix-master', 'autotune',
-  'scene-generation', 'stitch-render'
+  'scene-generation', 'stitch-render', 'music-generation'
 ];
 
 export const AssetKinds = [

@@ -6,6 +6,7 @@ import { registerProjects }   from './routes/projects.js';
 import { registerAssets }     from './routes/assets.js';
 import { registerCharacters } from './routes/characters.js';
 import { registerJobs }       from './routes/jobs.js';
+import { registerMusic }      from './routes/music.js';
 
 const router = new Router();
 
@@ -14,6 +15,7 @@ registerProjects(router);
 registerAssets(router);
 registerCharacters(router);
 registerJobs(router);
+registerMusic(router);
 
 const server = http.createServer(async (req, res) => {
   // Preflight CORS

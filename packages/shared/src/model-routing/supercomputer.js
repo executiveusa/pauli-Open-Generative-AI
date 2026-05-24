@@ -235,6 +235,27 @@ export const MODEL_REGISTRY = [
     qualityTier: 'draft',
     regionAvailability: ['all'],
   },
+  {
+    provider: 'ace-step',
+    modelId: 'ace-step-1.5',
+    displayName: 'ACE-Step 1.5',
+    displayNameEs: 'ACE-Step 1.5',
+    modality: ['audio'],
+    supportsTextToMusic: true,
+    supportsInstrumental: true,
+    supportsLyricsToSong: true,
+    supportsAudioCover: false,
+    supportsRepainting: false,
+    supportsStemExtraction: false,
+    supportsBYOK: false,
+    supportsServerKey: false,
+    supportsMock: true,
+    costTier: 'free',
+    speedTier: 'normal',
+    qualityTier: 'high',
+    regionAvailability: ['all'],
+    notes: 'Local Gradio-based music generation. Requires ACESTEP_API_URL configuration.',
+  },
 ];
 
 // ─── Routing Modes ───────────────────────────────────────────────────────────────
@@ -618,6 +639,12 @@ export function getCapabilityBadges(model) {
   if (model.supportsImageToVideo)         badges.push('I2V');
   if (model.supportsTextToImage)          badges.push('T2I');
   if (model.supportsLipSync)              badges.push('Lipsync');
+  if (model.supportsTextToMusic)          badges.push('T2M');
+  if (model.supportsInstrumental)         badges.push('Instrumental');
+  if (model.supportsLyricsToSong)         badges.push('Lyrics');
+  if (model.supportsAudioCover)           badges.push('Cover');
+  if (model.supportsRepainting)           badges.push('Repaint');
+  if (model.supportsStemExtraction)       badges.push('Stems');
   if (model.supportsBYOK)                 badges.push('BYOK');
   if (model.supportsCharacterConsistency) badges.push('ConsistencyLock');
   if (model.regionAvailability?.includes('latam') || model.regionAvailability?.includes('all')) {
@@ -625,4 +652,90 @@ export function getCapabilityBadges(model) {
   }
   if (model.supportsMock)                 badges.push('Mock');
   return badges;
+}
+
+/**
+ * Routes a music generation request to the best available provider.
+ *
+ * @param {object} request
+ * @param {string} request.mode - 'simple' | 'instrumental' | 'lyrics' | 'cover' | 'repaint'
+ * @param {string} [request.locale] - Language/region code (e.g., 'es-MX', 'es-CO')
+ * @param {boolean} [request.requiresCover] - Whether source audio is needed
+ * @param {boolean} [request.isFreeMode] - Whether free mode is enabled
+ * @param {Set<string>} availableProviders - provider IDs that have health checked OK
+ * @returns {{ primary: object, alternatives: object[], reason: string, reasonEs: string }}
+ */
+export function routeMusic(request = {}, availableProviders = new Set()) {
+  const {
+    mode = 'simple',
+    locale = 'en',
+    requiresCover = false,
+    isFreeMode = false,
+  } = request;
+
+  // Ensure availableProviders is a Set
+  const providerSet = availableProviders instanceof Set
+    ? availableProviders
+    : new Set(Array.isArray(availableProviders) ? availableProviders : []);
+
+  // Music modality candidates
+  let candidates = MODEL_REGISTRY.filter(m => m.modality.includes('audio'));
+
+  // Validate mode compatibility
+  if (mode === 'instrumental') {
+    candidates = candidates.filter(m => m.supportsInstrumental);
+  } else if (mode === 'lyrics') {
+    candidates = candidates.filter(m => m.supportsLyricsToSong);
+  } else if (mode === 'cover') {
+    candidates = candidates.filter(m => m.supportsAudioCover);
+  } else if (mode === 'repaint') {
+    candidates = candidates.filter(m => m.supportsRepainting);
+  } else {
+    // Default simple mode
+    candidates = candidates.filter(m => m.supportsTextToMusic);
+  }
+
+  // Prefer healthy providers, but include mocks as fallback
+  const healthy = candidates.filter(m => m.provider === 'ace-step' && providerSet.has('ace-step'));
+  const mocks = candidates.filter(m => m.supportsMock);
+
+  // LatAm locale preference: boost ace-step for Spanish/LatAm locales
+  const isLatAm = locale && (locale.startsWith('es') || locale.includes('-MX') || locale.includes('-CO') || locale.includes('-AR'));
+  let primary = null;
+  let alternatives = [];
+  let reason = '';
+  let reasonEs = '';
+
+  if (isFreeMode && healthy.length > 0) {
+    // Free mode: prefer healthy local provider
+    primary = healthy[0];
+    alternatives = healthy.slice(1).concat(mocks);
+    reason = 'Free Mode: local ACE-Step selected';
+    reasonEs = 'Modo Gratuito: ACE-Step local seleccionado';
+  } else if (isLatAm && healthy.length > 0) {
+    // LatAm locale: ace-step is best for regional music
+    primary = healthy[0];
+    alternatives = healthy.slice(1).concat(mocks);
+    reason = `LatAm music routing: ACE-Step selected for locale ${locale}`;
+    reasonEs = `Enrutamiento de música LatAm: ACE-Step seleccionado para ${locale}`;
+  } else if (healthy.length > 0) {
+    // Default: use healthy provider
+    primary = healthy[0];
+    alternatives = healthy.slice(1).concat(mocks);
+    reason = `Music provider healthy: ${primary.displayName}`;
+    reasonEs = `Proveedor de música sano: ${primary.displayNameEs}`;
+  } else if (mocks.length > 0) {
+    // Fallback to mock
+    primary = mocks[0];
+    alternatives = mocks.slice(1);
+    reason = 'Music provider not available — mock mode';
+    reasonEs = 'Proveedor de música no disponible — modo mock';
+  } else {
+    // Final fallback to stub
+    primary = MODEL_REGISTRY.find(m => m.provider === 'stub' && m.modality.includes('audio'));
+    reason = 'No music provider available — stub fallback';
+    reasonEs = 'No hay proveedor de música disponible — respaldo stub';
+  }
+
+  return { primary, alternatives, reason, reasonEs };
 }

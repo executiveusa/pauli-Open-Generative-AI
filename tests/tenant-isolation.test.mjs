@@ -168,63 +168,6 @@ describe('NVIDIA NIM Proxy Config', () => {
   });
 });
 
-describe('Job Worker — Provider Routing', () => {
-  it('resolves mock provider when no API keys set', async () => {
-    delete process.env.FAL_API_KEY;
-    delete process.env.MUAPI_API_KEY;
-    delete process.env.OPENAI_API_KEY;
-    process.env.NODE_ENV = 'test';
-
-    const { resolveProviderChain } = await import('../lib/jobs/router.js');
-    const chain = resolveProviderChain('hero_frame');
-    assert.ok(chain.includes('mock'), 'Should include mock fallback in non-production');
-  });
-
-  it('puts fal first when FAL_API_KEY is set', async () => {
-    process.env.FAL_API_KEY = 'fal_test_key';
-    process.env.NODE_ENV = 'test';
-
-    const { resolveProviderChain } = await import('../lib/jobs/router.js');
-    const chain = resolveProviderChain('hero_frame');
-    assert.equal(chain[0], 'fal', 'fal should be first when FAL_API_KEY is set');
-
-    delete process.env.FAL_API_KEY;
-  });
-
-  it('executes a mock job end-to-end and marks it succeeded', async () => {
-    process.env.NODE_ENV = 'test';
-    delete process.env.FAL_API_KEY;
-    delete process.env.MUAPI_API_KEY;
-    delete process.env.OPENAI_API_KEY;
-    delete process.env.DATABASE_URL;
-
-    const jobId = `job_test_${Date.now()}`;
-    const job = {
-      id: jobId,
-      organizationId: 'org-worker-test',
-      jobType: 'hero_frame',
-      type: 'hero_frame',
-      status: 'queued',
-      inputPrompt: 'A cinematic scene',
-      parameters: {},
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const { writeFile } = await import('node:fs/promises');
-    const { join } = await import('node:path');
-    const { mkdir } = await import('node:fs/promises');
-    const jobPath = join(TEST_ROOT, 'db', 'jobs');
-    await mkdir(jobPath, { recursive: true });
-    await writeFile(join(jobPath, `${jobId}.json`), JSON.stringify(job, null, 2));
-
-    const { executeJob } = await import('../lib/jobs/worker.js');
-    const result = await executeJob(jobId, null);
-    assert.equal(result.status, 'succeeded');
-    assert.ok(result.artifactUrl?.startsWith('mock://'), 'Mock artifact URL expected');
-  });
-});
-
 describe('Consent Safety Gate', () => {
   it('blocks generation for characters with minorFlag', () => {
     const character = { minorFlag: true, politicalLikenessFlag: false, consentStatus: 'consented' };

@@ -1,44 +1,47 @@
+/**
+ * GET    /api/v1/keys   — list provider key status (never returns raw keys)
+ * POST   /api/v1/keys   — save a provider key (encrypted via vault)
+ * DELETE /api/v1/keys   — remove a provider key
+ * Tenant-scoped.
+ */
+
 import { NextResponse } from 'next/server';
+import { withTenantContext } from '@/lib/tenant/context.js';
+import { encryptSecret, sanitizeCredential } from '@/lib/providers/vault.js';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import { makeProviderCredential } from '@/packages/shared/src/schemas/cynthia.js';
 
-const STORAGE_ROOT = process.env.STORAGE_ROOT
-  ? process.env.STORAGE_ROOT
-  : join(process.cwd(), 'apps', 'api', 'storage');
-
+const STORAGE_ROOT = process.env.STORAGE_ROOT ?? join(process.cwd(), 'apps', 'api', 'storage');
 const KEYS_DIR = join(STORAGE_ROOT, 'db', 'keys');
-const PROVIDERS = ['openai', 'anthropic', 'runway', 'replicate', 'elevenlabs', 'google', 'together', 'mistral', 'kling', 'seedance', 'wan', 'muapi', 'fal'];
 
-async function ensureDir(dir) {
-  await fs.mkdir(dir, { recursive: true });
-}
+const SUPPORTED_PROVIDERS = [
+  'openai', 'anthropic', 'runway', 'replicate', 'elevenlabs', 'google',
+  'together', 'mistral', 'kling', 'muapi', 'fal', 'huggingface',
+  'cynthia-gateway', 'comfyui',
+];
 
-async function readKey(provider) {
+async function ensureDir(dir) { await fs.mkdir(dir, { recursive: true }); }
+
+async function readKeyRecord(provider, organizationId) {
   try {
-    const raw = await fs.readFile(join(KEYS_DIR, `${provider}.json`), 'utf8');
+    const raw = await fs.readFile(join(KEYS_DIR, `${organizationId}_${provider}.json`), 'utf8');
     return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-async function saveKey(provider, isConfigured, lastTestedAt) {
+async function saveKeyRecord(provider, organizationId, record) {
   await ensureDir(KEYS_DIR);
-  const credential = makeProviderCredential({
-    provider,
-    isConfigured,
-    lastTestedAt,
-    ownerUserId: 'local-user',
-  });
-  const path = join(KEYS_DIR, `${provider}.json`);
-  await fs.writeFile(path, JSON.stringify(credential, null, 2));
-  return credential;
+  await fs.writeFile(
+    join(KEYS_DIR, `${organizationId}_${provider}.json`),
+    JSON.stringify(record, null, 2)
+  );
+  return record;
 }
 
-async function deleteKey(provider) {
+async function deleteKeyRecord(provider, organizationId) {
   try {
-    await fs.unlink(join(KEYS_DIR, `${provider}.json`));
+    await fs.unlink(join(KEYS_DIR, `${organizationId}_${provider}.json`));
     return true;
   } catch (err) {
     if (err.code === 'ENOENT') return false;
@@ -46,129 +49,75 @@ async function deleteKey(provider) {
   }
 }
 
-/**
- * GET /api/v1/keys
- * Returns status of all provider keys (never expose actual keys).
- */
-export async function GET() {
+async function handleGet(request, ctx) {
   const status = {};
-  for (const provider of PROVIDERS) {
-    const credential = await readKey(provider);
+  for (const provider of SUPPORTED_PROVIDERS) {
+    const record = await readKeyRecord(provider, ctx.organizationId);
     status[provider] = {
-      isConfigured: credential?.isConfigured ?? false,
-      lastTested: credential?.lastTestedAt ?? null,
-      testStatus: credential?.testStatus ?? 'untested',
+      isConfigured: record?.isConfigured ?? false,
+      lastTested: record?.lastTestedAt ?? null,
+      testStatus: record?.testStatus ?? 'untested',
     };
   }
   return NextResponse.json({ providers: status });
 }
 
-/**
- * POST /api/v1/keys
- * Saves a provider key.
- * Body: { provider, key }
- * NEVER stores actual key, NEVER logs key.
- * Returns success message without key exposure.
- */
-export async function POST(request) {
+async function handlePost(request, ctx) {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'invalid_json', message: 'Request body must be valid JSON' }, { status: 400 });
-  }
+  try { body = await request.json(); }
+  catch { return NextResponse.json({ error: 'invalid_json', message: 'Invalid JSON' }, { status: 400 }); }
 
   const { provider, key } = body;
 
-  // Validate required fields
-  if (!provider) {
+  if (!provider || !SUPPORTED_PROVIDERS.includes(provider)) {
     return NextResponse.json(
-      { error: 'validation_error', message: 'provider is required', errors: ['missing provider'] },
+      { error: 'validation_error', message: `Invalid or missing provider` },
       { status: 400 }
     );
   }
-
-  if (!PROVIDERS.includes(provider)) {
-    return NextResponse.json(
-      { error: 'validation_error', message: `Invalid provider: ${provider}`, errors: ['invalid provider'] },
-      { status: 400 }
-    );
-  }
-
   if (!key) {
-    return NextResponse.json(
-      { error: 'validation_error', message: 'key is required', errors: ['missing key'] },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'validation_error', message: 'key is required' }, { status: 400 });
   }
 
-  // IMPORTANT: Never log actual key - use placeholder
-  console.log(`[keys POST] Saving key for provider: ${provider} [REDACTED]`);
+  // Encrypt the key — never store plaintext
+  const encryptedSecretRef = encryptSecret(key);
 
-  try {
-    await saveKey(provider, true, new Date().toISOString());
-  } catch (err) {
-    console.error('[keys POST] save error:', err);
-    return NextResponse.json({ error: 'storage_error', message: 'Failed to save key' }, { status: 500 });
-  }
+  const credential = makeProviderCredential({
+    provider,
+    isConfigured: true,
+    lastTestedAt: new Date().toISOString(),
+    ownerUserId: ctx.userId,
+    organizationId: ctx.organizationId,
+    encryptedSecretRef,
+  });
 
-  // Return success WITHOUT exposing key
+  await saveKeyRecord(provider, ctx.organizationId, credential);
+
+  // Return sanitized record — no raw key, no encrypted ref
   return NextResponse.json(
-    {
-      provider,
-      isConfigured: true,
-      message: 'Key saved successfully',
-    },
+    { provider, isConfigured: true, message: 'Key saved successfully' },
     { status: 201 }
   );
 }
 
-/**
- * DELETE /api/v1/keys
- * Removes a provider key.
- * Body: { provider }
- */
-export async function DELETE(request) {
+async function handleDelete(request, ctx) {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'invalid_json', message: 'Request body must be valid JSON' }, { status: 400 });
-  }
+  try { body = await request.json(); }
+  catch { return NextResponse.json({ error: 'invalid_json', message: 'Invalid JSON' }, { status: 400 }); }
 
   const { provider } = body;
-
-  // Validate required fields
-  if (!provider) {
-    return NextResponse.json(
-      { error: 'validation_error', message: 'provider is required', errors: ['missing provider'] },
-      { status: 400 }
-    );
+  if (!provider || !SUPPORTED_PROVIDERS.includes(provider)) {
+    return NextResponse.json({ error: 'validation_error', message: 'Invalid or missing provider' }, { status: 400 });
   }
 
-  if (!PROVIDERS.includes(provider)) {
-    return NextResponse.json(
-      { error: 'validation_error', message: `Invalid provider: ${provider}`, errors: ['invalid provider'] },
-      { status: 400 }
-    );
+  const deleted = await deleteKeyRecord(provider, ctx.organizationId);
+  if (!deleted) {
+    return NextResponse.json({ error: 'not_found', message: `No key for ${provider}` }, { status: 404 });
   }
 
-  try {
-    const deleted = await deleteKey(provider);
-    if (!deleted) {
-      return NextResponse.json(
-        { error: 'not_found', message: `No key configured for provider: ${provider}` },
-        { status: 404 }
-      );
-    }
-  } catch (err) {
-    console.error('[keys DELETE] error:', err);
-    return NextResponse.json({ error: 'storage_error', message: 'Failed to delete key' }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    deleted: true,
-    provider,
-    message: 'Key removed successfully',
-  });
+  return NextResponse.json({ deleted: true, provider });
 }
+
+export const GET = withTenantContext(handleGet);
+export const POST = withTenantContext(handlePost);
+export const DELETE = withTenantContext(handleDelete);

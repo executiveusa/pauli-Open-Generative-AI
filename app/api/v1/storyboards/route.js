@@ -1,84 +1,64 @@
+/**
+ * GET  /api/v1/storyboards — list tenant storyboards
+ * POST /api/v1/storyboards — create storyboard
+ * Tenant-scoped.
+ */
+
 import { NextResponse } from 'next/server';
 import { promises as fs } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
+import { withTenantContext } from '@/lib/tenant/context.js';
 import { makeStoryboard, validateStoryboard } from '@/packages/shared/src/schemas/cynthia.js';
 
-const STORAGE_ROOT = process.env.STORAGE_ROOT
-  ? process.env.STORAGE_ROOT
-  : join(process.cwd(), 'apps', 'api', 'storage');
-
+const STORAGE_ROOT = process.env.STORAGE_ROOT ?? join(process.cwd(), 'apps', 'api', 'storage');
 const STORYBOARDS_DIR = join(STORAGE_ROOT, 'db', 'storyboards');
 
-async function ensureDir(dir) {
-  await fs.mkdir(dir, { recursive: true });
-}
+async function ensureDir(dir) { await fs.mkdir(dir, { recursive: true }); }
 
-async function listStoryboards() {
+async function listStoryboards(organizationId) {
   await ensureDir(STORYBOARDS_DIR);
   let files;
-  try {
-    files = await fs.readdir(STORYBOARDS_DIR);
-  } catch {
-    return [];
-  }
+  try { files = await fs.readdir(STORYBOARDS_DIR); } catch { return []; }
   const results = [];
   for (const file of files) {
     if (!file.endsWith('.json')) continue;
     try {
       const raw = await fs.readFile(join(STORYBOARDS_DIR, file), 'utf8');
-      results.push(JSON.parse(raw));
-    } catch {
-      // skip corrupt files
-    }
+      const sb = JSON.parse(raw);
+      if (!organizationId || sb.organizationId === organizationId) results.push(sb);
+    } catch { /* skip */ }
   }
   return results;
 }
 
 async function saveStoryboard(storyboard) {
   await ensureDir(STORYBOARDS_DIR);
-  const path = join(STORYBOARDS_DIR, `${storyboard.id}.json`);
-  await fs.writeFile(path, JSON.stringify(storyboard, null, 2));
+  await fs.writeFile(join(STORYBOARDS_DIR, `${storyboard.id}.json`), JSON.stringify(storyboard, null, 2));
   return storyboard;
 }
 
-/**
- * GET /api/v1/storyboards
- * Returns list of all storyboards.
- */
-export async function GET() {
-  try {
-    const items = await listStoryboards();
-    return NextResponse.json({ items, total: items.length });
-  } catch (err) {
-    console.error('[storyboards GET]', err);
-    return NextResponse.json({ error: 'storage_error', message: err.message }, { status: 500 });
-  }
+async function handleGet(request, ctx) {
+  const items = await listStoryboards(ctx.organizationId);
+  return NextResponse.json({ items, total: items.length });
 }
 
-/**
- * POST /api/v1/storyboards
- * Creates a new storyboard.
- */
-export async function POST(request) {
+async function handlePost(request, ctx) {
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'invalid_json', message: 'Request body must be valid JSON' }, { status: 400 });
-  }
+  try { body = await request.json(); }
+  catch { return NextResponse.json({ error: 'invalid_json', message: 'Request body must be valid JSON' }, { status: 400 }); }
 
-  // Build storyboard
   let storyboard;
   try {
     storyboard = makeStoryboard({
       ...body,
-      ownerUserId: body.ownerUserId ?? 'local-user',
+      ownerUserId: ctx.userId,
+      organizationId: ctx.organizationId,
+      createdByUserId: ctx.userId,
     });
   } catch (err) {
     return NextResponse.json({ error: 'schema_error', message: err.message }, { status: 400 });
   }
 
-  // Validate storyboard
   const validation = validateStoryboard(storyboard);
   if (!validation.valid) {
     return NextResponse.json(
@@ -87,20 +67,16 @@ export async function POST(request) {
     );
   }
 
-  // Basic validation
   if (!storyboard.title) {
     return NextResponse.json(
-      { error: 'validation_error', message: 'title is required', errors: ['missing title'] },
+      { error: 'validation_error', message: 'title is required' },
       { status: 400 }
     );
   }
 
-  try {
-    await saveStoryboard(storyboard);
-  } catch (err) {
-    console.error('[storyboards POST] save error:', err);
-    return NextResponse.json({ error: 'storage_error', message: 'Failed to save storyboard' }, { status: 500 });
-  }
-
+  await saveStoryboard(storyboard);
   return NextResponse.json(storyboard, { status: 201 });
 }
+
+export const GET = withTenantContext(handleGet);
+export const POST = withTenantContext(handlePost);

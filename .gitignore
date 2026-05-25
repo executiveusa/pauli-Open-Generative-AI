@@ -42,3 +42,11 @@ apps/api/storage/
 storage/
 /tmp/mol-*
 .env.local
+
+# MCP tool clones (installed as dependencies, not part of the project)
+mcp-openbrowser/
+mcp-chrome/
+jcodemunch-mcp/
+context7/
+rtk/
+AGENTS.md.bak

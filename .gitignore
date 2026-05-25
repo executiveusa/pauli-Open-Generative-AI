@@ -41,3 +41,4 @@ out/
 apps/api/storage/
 storage/
 /tmp/mol-*
+.env.local

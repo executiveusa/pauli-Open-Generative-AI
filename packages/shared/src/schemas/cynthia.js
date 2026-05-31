@@ -533,6 +533,10 @@ export function makeCharacterPassport(partial = {}) {
     },
     safetyFlags: Array.isArray(partial.safetyFlags) ? partial.safetyFlags : [],
     ownerUserId: partial.ownerUserId ?? '',
+    organizationId: partial.organizationId ?? null,
+    workspaceId: partial.workspaceId ?? null,
+    createdByUserId: partial.createdByUserId ?? partial.ownerUserId ?? null,
+    displayName: partial.displayName ?? partial.publicName ?? '',
     createdAt: partial.createdAt ?? ts,
     updatedAt: partial.updatedAt ?? ts,
   };

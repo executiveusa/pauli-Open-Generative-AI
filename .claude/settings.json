@@ -1,0 +1,48 @@
+{
+  "mcpServers": {
+    "jcodemunch": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "https://github.com/jgravelle/jcodemunch-mcp/releases/download/v1.108.23/jcodemunch_mcp-1.108.23-py3-none-any.whl",
+        "jcodemunch-mcp"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest",
+        "--transport",
+        "stdio"
+      ]
+    },
+    "chrome-mcp": {
+      "command": "node",
+      "args": [
+        "/opt/node22/lib/node_modules/mcp-chrome-bridge/dist/mcp/mcp-server-stdio.js"
+      ]
+    }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/root/.local/bin/rtk hook claude"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(rtk *)",
+      "Bash(uvx *)",
+      "Bash(npx *)",
+      "Bash(node *)"
+    ]
+  }
+}

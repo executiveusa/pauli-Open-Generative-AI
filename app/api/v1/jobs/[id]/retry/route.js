@@ -1,89 +1,83 @@
 /**
- * app/api/v1/jobs/[id]/retry/route.js
- * POST: retry a failed job by creating a new job with same parameters
+ * POST /api/v1/jobs/:id/retry — re-queue a failed job (tenant-scoped).
  */
 
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { withTenantContext } from '@/lib/tenant/context.js';
 
-const JOBS_DIR = path.join(process.cwd(), 'apps/api/storage/db/jobs');
+const JOBS_DIR = join(
+  process.env.STORAGE_ROOT ?? join(process.cwd(), 'apps', 'api', 'storage'),
+  'db', 'jobs'
+);
 
 function newId(prefix = 'job') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function nowTs() {
-  return new Date().toISOString();
-}
-
-async function ensureDir(dir) {
-  await fs.mkdir(dir, { recursive: true });
-}
-
-async function readJob(id) {
-  const filePath = path.join(JOBS_DIR, `${id}.json`);
-  try {
-    const raw = await fs.readFile(filePath, 'utf-8');
-    return JSON.parse(raw);
-  } catch {
-    return null;
+async function getPrisma() {
+  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.startsWith('file:')) {
+    const { prisma } = await import('@/lib/db/client.js');
+    return prisma;
   }
+  return null;
 }
 
-async function saveJob(job) {
-  await ensureDir(JOBS_DIR);
-  const filePath = path.join(JOBS_DIR, `${job.id}.json`);
-  await fs.writeFile(filePath, JSON.stringify(job, null, 2), 'utf-8');
-  return job;
-}
+async function handlePost(_request, ctx, { id }) {
+  const db = await getPrisma();
 
-export async function POST(_request, { params }) {
-  try {
-    const { id } = await params;
-    const original = await readJob(id);
-    if (!original) {
-      return NextResponse.json(
-        { error: { message: `Job ${id} not found`, code: 'not_found' } },
-        { status: 404 }
-      );
+  if (db) {
+    const original = await db.generationJob.findFirst({ where: { id, organizationId: ctx.organizationId } });
+    if (!original) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    if (!['failed', 'cancelled'].includes(original.status)) {
+      return NextResponse.json({ error: 'not_retryable', message: `Job status is '${original.status}'. Only failed or cancelled jobs can be retried.` }, { status: 409 });
     }
+    const retry = await db.generationJob.create({
+      data: {
+        organizationId: original.organizationId,
+        workspaceId: original.workspaceId,
+        projectId: original.projectId,
+        shotId: original.shotId,
+        characterPassportId: original.characterPassportId,
+        createdByUserId: ctx.userId,
+        jobType: original.jobType,
+        status: 'queued',
+        inputPrompt: original.inputPrompt,
+        inputNegativePrompt: original.inputNegativePrompt,
+        inputSpanishPrompt: original.inputSpanishPrompt,
+        routingMode: original.routingMode,
+        parameters: original.parameters ?? undefined,
+      },
+    });
+    return NextResponse.json(retry, { status: 202 });
+  }
 
-    const ts = nowTs();
-    const retryJob = {
+  // Disk mode
+  try {
+    const raw = await fs.readFile(join(JOBS_DIR, `${id}.json`), 'utf-8');
+    const original = JSON.parse(raw);
+    if (original.organizationId && original.organizationId !== ctx.organizationId) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+    const ts = new Date().toISOString();
+    const retry = {
+      ...original,
       id: newId('job'),
-      type: original.type,
       status: 'queued',
-      projectId: original.projectId ?? null,
-      storyboardId: original.storyboardId ?? null,
-      shotId: original.shotId ?? null,
-      characterPassportId: original.characterPassportId ?? null,
-      modelRoute: original.modelRoute ?? null,
-      routingMode: original.routingMode ?? 'auto',
-      inputPrompt: original.inputPrompt ?? null,
-      inputNegativePrompt: original.inputNegativePrompt ?? null,
-      inputSpanishPrompt: original.inputSpanishPrompt ?? null,
-      inputSpanishNegativePrompt: original.inputSpanishNegativePrompt ?? null,
-      parameters: original.parameters ?? {},
-      progress: 0,
-      stage: 'queued',
-      message: `Retry of job ${id}`,
-      artifacts: [],
-      error: null,
       retriedFromJobId: id,
-      statusHistory: [{ status: 'queued', at: ts, message: `Retry of job ${id}` }],
+      createdByUserId: ctx.userId,
+      artifacts: [],
+      statusHistory: [{ status: 'queued', at: ts, message: `Retry of ${id}` }],
       createdAt: ts,
       updatedAt: ts,
     };
-
-    await saveJob(retryJob);
-
-    return NextResponse.json(retryJob, { status: 202 });
-  } catch (err) {
-    console.error('[job retry POST]', err.message);
-    return NextResponse.json(
-      { error: { message: 'Failed to retry job', code: 'internal_error' } },
-      { status: 500 }
-    );
+    await fs.mkdir(JOBS_DIR, { recursive: true });
+    await fs.writeFile(join(JOBS_DIR, `${retry.id}.json`), JSON.stringify(retry, null, 2));
+    return NextResponse.json(retry, { status: 202 });
+  } catch {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 }
+
+export const POST = withTenantContext(handlePost);

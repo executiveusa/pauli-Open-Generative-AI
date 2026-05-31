@@ -12,20 +12,6 @@ import WaveformPlayer from '@/components/mol/WaveformPlayer';
 import MusicArtifactLibrary from '@/components/mol/MusicArtifactLibrary';
 import MusicToVideoLauncher from '@/components/mol/MusicToVideoLauncher';
 import JobTracker from '@/components/mol/JobTracker';
-import RightsConsentPanel from '@/components/mol/RightsConsentPanel';
-import {
-  LOCALE_PRESETS,
-  getLocalePreset,
-  getGenreSuggestions,
-  getMoodSuggestions,
-  getDefaultLocale,
-} from '@/packages/shared/src/music/localePresets.js';
-import {
-  buildProviderRoute,
-  validateLocaleRequest,
-  getPromptHints,
-} from '@/packages/shared/src/music/localeRouting.js';
-import { validateMusicRights } from '@/packages/shared/src/music/rightsValidation.js';
 
 const LABELS = {
   en: {
@@ -73,44 +59,28 @@ const LABELS = {
 };
 
 export default function MusicStudioPage() {
-  const [uiLocale, setUiLocale] = useState('en');
-  const [selectedLocaleCode, setSelectedLocaleCode] = useState('en-US');
+  const [locale, setLocale] = useState('en');
   const [mode, setMode] = useState('simple');
   const [jobId, setJobId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [artifacts, setArtifacts] = useState([]);
   const [currentArtifact, setCurrentArtifact] = useState(null);
-  const [promptHints, setPromptHints] = useState([]);
-  const [consents, setConsents] = useState({});
 
-  const localePreset = getLocalePreset(selectedLocaleCode);
   const [form, setForm] = useState({
     prompt: '',
     mode: 'simple',
-    language: localePreset.language,
-    locale: selectedLocaleCode,
+    language: 'en',
+    locale: 'en-US',
     durationSeconds: 60,
-    bpm: localePreset.defaultBpm,
-    key: localePreset.defaultKey,
+    bpm: 120,
+    key: 'C',
     seed: Math.floor(Math.random() * 2147483647),
     lyrics: '',
     sourceAudioAssetId: null,
   });
 
-  const t = LABELS[uiLocale];
-
-  useEffect(() => {
-    const hints = getPromptHints(selectedLocaleCode);
-    setPromptHints(hints.hints);
-    setForm(prev => ({
-      ...prev,
-      language: localePreset.language,
-      locale: selectedLocaleCode,
-      bpm: localePreset.defaultBpm,
-      key: localePreset.defaultKey,
-    }));
-  }, [selectedLocaleCode]);
+  const t = LABELS[locale];
 
   useEffect(() => {
     // Load artifacts from library
@@ -138,38 +108,16 @@ export default function MusicStudioPage() {
       return;
     }
 
-    // Validate locale constraints
-    const localeValidation = validateLocaleRequest(form);
-    if (!localeValidation.valid) {
-      setError(localeValidation.violations[0].constraint);
-      return;
-    }
-
-    // Validate rights and consent
-    const rightsValidation = validateMusicRights(form);
-    if (!rightsValidation.valid) {
-      const errorMsg = rightsValidation.violations[0].message;
-      setError(errorMsg);
-      return;
-    }
-
     setSubmitting(true);
 
     try {
-      const request = localeValidation.adjusted;
-
-      // Build optimal provider route for locale
-      const route = buildProviderRoute(request);
-
       const endpoint = `/api/v1/music/${form.mode}`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId: 'default-project', // TODO: Get from context
-          ...request,
-          providerRoute: route.primary,
-          fallbackProviders: route.fallbacks,
+          ...form,
         }),
       });
 
@@ -198,27 +146,14 @@ export default function MusicStudioPage() {
               <h1 className="text-4xl font-bold text-white mb-2">{t.title}</h1>
               <p className="text-purple-200">{t.subtitle}</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <select
-                value={uiLocale}
-                onChange={e => setUiLocale(e.target.value)}
-                className="bg-purple-900/50 text-white px-3 py-2 rounded border border-purple-500/30 hover:border-purple-500/60 text-sm"
-                title="UI Language"
+                value={locale}
+                onChange={e => setLocale(e.target.value)}
+                className="bg-purple-900/50 text-white px-4 py-2 rounded border border-purple-500/30 hover:border-purple-500/60"
               >
-                <option value="en">English UI</option>
-                <option value="es">Español UI</option>
-              </select>
-              <select
-                value={selectedLocaleCode}
-                onChange={e => setSelectedLocaleCode(e.target.value)}
-                className="bg-purple-900/50 text-white px-3 py-2 rounded border border-purple-500/30 hover:border-purple-500/60 text-sm"
-                title="Music Generation Locale"
-              >
-                {Object.entries(LOCALE_PRESETS).map(([code, preset]) => (
-                  <option key={code} value={code}>
-                    {preset.label}
-                  </option>
-                ))}
+                <option value="en">English</option>
+                <option value="es">Español</option>
               </select>
             </div>
           </div>
@@ -253,13 +188,13 @@ export default function MusicStudioPage() {
             <MusicPromptComposer
               value={form.prompt}
               onChange={prompt => setForm(prev => ({ ...prev, prompt }))}
-              locale={uiLocale}
+              locale={locale}
             />
 
             {/* Style Tags */}
             <StyleTagPicker
               onChange={tags => setForm(prev => ({ ...prev, styleTags: tags }))}
-              locale={uiLocale}
+              locale={locale}
             />
 
             {/* BPM, Key, Duration */}
@@ -270,8 +205,7 @@ export default function MusicStudioPage() {
               onBpmChange={bpm => setForm(prev => ({ ...prev, bpm }))}
               onKeyChange={key => setForm(prev => ({ ...prev, key }))}
               onDurationChange={dur => setForm(prev => ({ ...prev, durationSeconds: dur }))}
-              bpmRange={localePreset.bpmRange}
-              locale={uiLocale}
+              locale={locale}
             />
 
             {/* Lyrics Editor (if mode === lyrics) */}
@@ -279,7 +213,7 @@ export default function MusicStudioPage() {
               <LyricsEditor
                 value={form.lyrics}
                 onChange={lyrics => setForm(prev => ({ ...prev, lyrics }))}
-                locale={uiLocale}
+                locale={locale}
               />
             )}
 
@@ -287,16 +221,9 @@ export default function MusicStudioPage() {
             {(form.mode === 'cover' || form.mode === 'repaint') && (
               <ReferenceAudioUploader
                 onUpload={assetId => setForm(prev => ({ ...prev, sourceAudioAssetId: assetId }))}
-                locale={uiLocale}
+                locale={locale}
               />
             )}
-
-            {/* Rights & Consent Panel */}
-            <RightsConsentPanel
-              request={form}
-              onConsent={setConsents}
-              locale={uiLocale}
-            />
 
             {/* Error Display */}
             {error && (
@@ -345,7 +272,7 @@ export default function MusicStudioPage() {
               <MusicArtifactLibrary
                 artifacts={artifacts.slice(0, 3)}
                 onSelect={setCurrentArtifact}
-                locale={uiLocale}
+                locale={locale}
               />
             )}
           </div>

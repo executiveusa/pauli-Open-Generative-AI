@@ -1,153 +1,127 @@
 /**
- * app/api/v1/jobs/[id]/artifacts/route.js
- * GET: list artifacts for a job
- * POST: attach artifact to a job
+ * GET  /api/v1/jobs/:id/artifacts — list artifacts for a job (tenant-scoped)
+ * POST /api/v1/jobs/:id/artifacts — attach an artifact to a job
  */
 
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { promises as fs } from 'node:fs';
+import { join } from 'node:path';
+import { withTenantContext } from '@/lib/tenant/context.js';
 
-const ARTIFACTS_DIR = path.join(process.cwd(), 'apps/api/storage/db/artifacts');
-const JOBS_DIR = path.join(process.cwd(), 'apps/api/storage/db/jobs');
+const STORAGE_ROOT  = process.env.STORAGE_ROOT ?? join(process.cwd(), 'apps', 'api', 'storage');
+const JOBS_DIR      = join(STORAGE_ROOT, 'db', 'jobs');
+const ARTIFACTS_DIR = join(STORAGE_ROOT, 'db', 'artifacts');
+
+const VALID_TYPES = ['image', 'video', 'audio', 'text', 'json', 'other'];
 
 function newId(prefix = 'artifact') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function nowTs() {
-  return new Date().toISOString();
+async function getPrisma() {
+  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.startsWith('file:')) {
+    const { prisma } = await import('@/lib/db/client.js');
+    return prisma;
+  }
+  return null;
 }
 
-async function ensureDir(dir) {
-  await fs.mkdir(dir, { recursive: true });
-}
-
-async function readJob(id) {
-  const filePath = path.join(JOBS_DIR, `${id}.json`);
+async function getJobOrgDisk(id) {
   try {
-    const raw = await fs.readFile(filePath, 'utf-8');
+    const raw = await fs.readFile(join(JOBS_DIR, `${id}.json`), 'utf-8');
     return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-async function readAllArtifacts() {
-  await ensureDir(ARTIFACTS_DIR);
-  let files;
-  try {
-    files = await fs.readdir(ARTIFACTS_DIR);
-  } catch {
-    return [];
+// ─── GET ──────────────────────────────────────────────────────────────────
+
+async function handleGet(_request, ctx, { id }) {
+  const db = await getPrisma();
+
+  if (db) {
+    const job = await db.generationJob.findFirst({ where: { id, organizationId: ctx.organizationId } });
+    if (!job) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    const artifacts = await db.artifact.findMany({
+      where: { jobId: id },
+      orderBy: { createdAt: 'asc' },
+    });
+    return NextResponse.json({ artifacts });
   }
+
+  const job = await getJobOrgDisk(id);
+  if (!job) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  if (job.organizationId && job.organizationId !== ctx.organizationId) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  const files = await fs.readdir(ARTIFACTS_DIR).catch(() => []);
   const artifacts = [];
-  for (const file of files) {
-    if (!file.endsWith('.json')) continue;
+  for (const f of files) {
+    if (!f.endsWith('.json')) continue;
     try {
-      const raw = await fs.readFile(path.join(ARTIFACTS_DIR, file), 'utf-8');
-      artifacts.push(JSON.parse(raw));
-    } catch {
-      // skip corrupt files
-    }
+      const raw = await fs.readFile(join(ARTIFACTS_DIR, f), 'utf-8');
+      const a = JSON.parse(raw);
+      if (a.jobId === id) artifacts.push(a);
+    } catch { /* skip */ }
   }
-  return artifacts;
+  return NextResponse.json({ artifacts });
 }
 
-async function saveArtifact(artifact) {
-  await ensureDir(ARTIFACTS_DIR);
-  const filePath = path.join(ARTIFACTS_DIR, `${artifact.id}.json`);
-  await fs.writeFile(filePath, JSON.stringify(artifact, null, 2), 'utf-8');
-  return artifact;
-}
+// ─── POST ─────────────────────────────────────────────────────────────────
 
-async function saveJob(job) {
-  await ensureDir(JOBS_DIR);
-  const filePath = path.join(JOBS_DIR, `${job.id}.json`);
-  await fs.writeFile(filePath, JSON.stringify(job, null, 2), 'utf-8');
-  return job;
-}
+async function handlePost(request, ctx, { id }) {
 
-export async function GET(_request, { params }) {
-  try {
-    const { id } = await params;
-    const job = await readJob(id);
-    if (!job) {
-      return NextResponse.json(
-        { error: { message: `Job ${id} not found`, code: 'not_found' } },
-        { status: 404 }
-      );
-    }
+  let body;
+  try { body = await request.json(); }
+  catch { return NextResponse.json({ error: 'invalid_body' }, { status: 400 }); }
 
-    const all = await readAllArtifacts();
-    const artifacts = all.filter(a => a.jobId === id);
-    artifacts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    return NextResponse.json({ artifacts, total: artifacts.length }, { status: 200 });
-  } catch (err) {
-    console.error('[job artifacts GET]', err.message);
-    return NextResponse.json(
-      { error: { message: 'Failed to list artifacts', code: 'internal_error' } },
-      { status: 500 }
-    );
+  const type = body.type ?? 'other';
+  if (!VALID_TYPES.includes(type)) {
+    return NextResponse.json({ error: 'invalid_type', message: `type must be one of: ${VALID_TYPES.join(', ')}` }, { status: 400 });
   }
-}
 
-export async function POST(request, { params }) {
-  try {
-    const { id } = await params;
-    const job = await readJob(id);
-    if (!job) {
-      return NextResponse.json(
-        { error: { message: `Job ${id} not found`, code: 'not_found' } },
-        { status: 404 }
-      );
-    }
+  const db = await getPrisma();
 
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { error: { message: 'Invalid JSON body', code: 'invalid_body' } },
-        { status: 400 }
-      );
-    }
-
-    const ts = nowTs();
-    const artifact = {
-      id: body.id ?? newId('artifact'),
-      jobId: id,
-      projectId: body.projectId ?? job.projectId ?? null,
-      artifactType: body.artifactType ?? body.kind ?? 'image',
-      filename: body.filename ?? '',
-      storagePath: body.storagePath ?? body.url ?? '',
-      url: body.url ?? body.storagePath ?? '',
-      mimeType: body.mimeType ?? 'application/octet-stream',
-      sizeBytes: body.sizeBytes ?? null,
-      width: body.width ?? null,
-      height: body.height ?? null,
-      durationSeconds: body.durationSeconds ?? null,
-      metadata: body.metadata ?? {},
-      createdAt: ts,
-    };
-
-    await saveArtifact(artifact);
-
-    // Also add artifact reference to job
-    const updatedJob = {
-      ...job,
-      artifacts: [...(job.artifacts ?? []), { id: artifact.id, artifactType: artifact.artifactType, url: artifact.url, filename: artifact.filename }],
-      updatedAt: ts,
-    };
-    await saveJob(updatedJob);
-
+  if (db) {
+    const job = await db.generationJob.findFirst({ where: { id, organizationId: ctx.organizationId } });
+    if (!job) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    const artifact = await db.artifact.create({
+      data: {
+        organizationId: ctx.organizationId,
+        jobId: id,
+        type,
+        url: body.url ?? null,
+        storagePath: body.storagePath ?? null,
+        mimeType: body.mimeType ?? null,
+        isFinal: body.isFinal ?? false,
+        metadata: body.metadata ?? undefined,
+      },
+    });
     return NextResponse.json(artifact, { status: 201 });
-  } catch (err) {
-    console.error('[job artifacts POST]', err.message);
-    return NextResponse.json(
-      { error: { message: 'Failed to attach artifact', code: 'internal_error' } },
-      { status: 500 }
-    );
   }
+
+  const job = await getJobOrgDisk(id);
+  if (!job) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  if (job.organizationId && job.organizationId !== ctx.organizationId) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  const artifact = {
+    id: newId('artifact'),
+    organizationId: ctx.organizationId,
+    jobId: id,
+    type,
+    url: body.url ?? null,
+    storagePath: body.storagePath ?? null,
+    mimeType: body.mimeType ?? null,
+    isFinal: body.isFinal ?? false,
+    metadata: body.metadata ?? null,
+    createdAt: new Date().toISOString(),
+  };
+  await fs.mkdir(ARTIFACTS_DIR, { recursive: true });
+  await fs.writeFile(join(ARTIFACTS_DIR, `${artifact.id}.json`), JSON.stringify(artifact, null, 2));
+  return NextResponse.json(artifact, { status: 201 });
 }
+
+export const GET  = withTenantContext(handleGet);
+export const POST = withTenantContext(handlePost);

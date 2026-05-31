@@ -12,6 +12,7 @@ import WaveformPlayer from '@/components/mol/WaveformPlayer';
 import MusicArtifactLibrary from '@/components/mol/MusicArtifactLibrary';
 import MusicToVideoLauncher from '@/components/mol/MusicToVideoLauncher';
 import JobTracker from '@/components/mol/JobTracker';
+import RightsConsentPanel from '@/components/mol/RightsConsentPanel';
 import {
   LOCALE_PRESETS,
   getLocalePreset,
@@ -24,6 +25,7 @@ import {
   validateLocaleRequest,
   getPromptHints,
 } from '@/packages/shared/src/music/localeRouting.js';
+import { validateMusicRights } from '@/packages/shared/src/music/rightsValidation.js';
 
 const LABELS = {
   en: {
@@ -80,6 +82,7 @@ export default function MusicStudioPage() {
   const [artifacts, setArtifacts] = useState([]);
   const [currentArtifact, setCurrentArtifact] = useState(null);
   const [promptHints, setPromptHints] = useState([]);
+  const [consents, setConsents] = useState({});
 
   const localePreset = getLocalePreset(selectedLocaleCode);
   const [form, setForm] = useState({
@@ -136,16 +139,24 @@ export default function MusicStudioPage() {
     }
 
     // Validate locale constraints
-    const validation = validateLocaleRequest(form);
-    if (!validation.valid) {
-      setError(validation.violations[0].constraint);
+    const localeValidation = validateLocaleRequest(form);
+    if (!localeValidation.valid) {
+      setError(localeValidation.violations[0].constraint);
+      return;
+    }
+
+    // Validate rights and consent
+    const rightsValidation = validateMusicRights(form);
+    if (!rightsValidation.valid) {
+      const errorMsg = rightsValidation.violations[0].message;
+      setError(errorMsg);
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const request = validation.adjusted;
+      const request = localeValidation.adjusted;
 
       // Build optimal provider route for locale
       const route = buildProviderRoute(request);
@@ -279,6 +290,13 @@ export default function MusicStudioPage() {
                 locale={uiLocale}
               />
             )}
+
+            {/* Rights & Consent Panel */}
+            <RightsConsentPanel
+              request={form}
+              onConsent={setConsents}
+              locale={uiLocale}
+            />
 
             {/* Error Display */}
             {error && (

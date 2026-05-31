@@ -24,9 +24,11 @@ export default function BPMKeyDurationControls({
   onKeyChange,
   duration,
   onDurationChange,
+  bpmRange = [40, 200],
   locale = 'en',
 }) {
   const t = LABELS[locale];
+  const [minBpm, maxBpm] = bpmRange;
 
   return (
     <div className="bg-slate-800/50 border border-purple-500/20 rounded-lg p-6">
@@ -39,16 +41,16 @@ export default function BPMKeyDurationControls({
           <div className="flex items-center gap-2">
             <input
               type="range"
-              min="40"
-              max="200"
+              min={minBpm}
+              max={maxBpm}
               value={bpm}
               onChange={e => onBpmChange(parseInt(e.target.value))}
               className="flex-1 h-2 bg-slate-700 rounded appearance-none cursor-pointer accent-purple-600"
             />
             <input
               type="number"
-              min="40"
-              max="200"
+              min={minBpm}
+              max={maxBpm}
               value={bpm}
               onChange={e => onBpmChange(parseInt(e.target.value) || 120)}
               className="w-16 px-2 py-1 bg-slate-700/50 border border-purple-500/30 rounded text-white text-sm focus:outline-none focus:border-purple-500/60"

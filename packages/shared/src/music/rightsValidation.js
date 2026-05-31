@@ -237,7 +237,7 @@ export function getRightsRecommendations(usageIntent, locale = 'en') {
         'Consider adding AI-generated disclosure for transparency',
       ],
       cover: [
-        'Requires licensing from original artist/label',
+        'Requires license from original artist/label',
         'Must provide artist attribution',
         'Commercial use may be restricted',
         'Get explicit permission before distribution',

@@ -189,8 +189,8 @@ export function sortArtifacts(artifacts, sortBy = 'recent') {
       return sorted.sort((a, b) => b.favoriteCount - a.favoriteCount);
     case 'trending':
       return sorted.sort((a, b) => {
-        const scoreA = b.viewCount + b.remixCount * 2 + b.favoriteCount * 3;
-        const scoreB = a.viewCount + a.remixCount * 2 + a.favoriteCount * 3;
+        const scoreA = a.viewCount + a.remixCount * 2 + a.favoriteCount * 3;
+        const scoreB = b.viewCount + b.remixCount * 2 + b.favoriteCount * 3;
         return scoreB - scoreA;
       });
     default:
